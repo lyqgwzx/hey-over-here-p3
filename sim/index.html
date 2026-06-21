@@ -229,8 +229,8 @@
   </div>
 </div>
 
-<!-- participant welcome (shows on load) -->
-<div class="modal show" id="welcomeModal">
+<!-- participant welcome (only when entered via ?study=1 from the intro page) -->
+<div class="modal" id="welcomeModal">
   <div class="card" style="width:510px;max-width:94vw">
     <h3>Help test a voice-summoned office robot 🤖</h3>
     <p>You'll call a small cleaning robot to your desk a few times — sometimes through a phone app, sometimes just by saying <b>“over here”</b> — and rate how each felt. About <b>3 minutes</b>.</p>
@@ -859,6 +859,7 @@ function resetRobot(){ robot.queue.length=0; robot.serving=null; robot.state='id
 // --- boot ----------------------------------------------------------------
 window.addEventListener('resize',fitDPR);
 fitDPR(); setCondition('visual'); rebuildAppLoc(); refresh(); requestAnimationFrame(loop);
+if(new URLSearchParams(location.search).has('study')) document.getElementById('welcomeModal').classList.add('show');
 </script>
 </body>
 </html>

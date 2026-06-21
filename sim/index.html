@@ -139,7 +139,7 @@
         <div class="row" style="margin-top:9px">
           <button class="act talk" id="talkBtn" style="flex:2">🎙 Hold to summon ("over here")</button>
         </div>
-        <div class="desc">Voice phrases recognised: <i>"over here"</i>, <i>"come here"</i>, <i>"hey bin"</i>, <i>"robot"</i>. No mic? The button still simulates the utterance.</div>
+        <div class="desc">Hold the button (or press <kbd>Space</kbd>) and just speak — e.g. “over here”. <b>Releasing issues the summon</b>; you don’t need exact words, and it works even without a mic.</div>
       </div>
 
       <div class="sec">
@@ -610,9 +610,8 @@ const PHRASES=['over here','come here','hey bin','bin','robot','hey'];
 function micStatus(s){ document.getElementById('micPill').textContent='mic: '+s; }
 if(SR){
   rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=3;
-  rec.onresult=ev=>{ let txt=''; for(const r of ev.results) txt+=r[0].transcript+' ';
-    txt=txt.toLowerCase(); const ok=PHRASES.some(p=>txt.includes(p));
-    if(ok) doVoiceSummon('🎙 "'+txt.trim()+'"'); else toast('Heard: "'+txt.trim()+'" — not a summon phrase'); };
+  rec.onresult=ev=>{ let txt=''; for(const r of ev.results) txt+=r[0].transcript+' '; txt=txt.trim();
+    if(txt) micStatus('heard “'+txt+'”'); };   // transcript shown for realism only — the summon fires on release, ASR is NOT required
   rec.onerror=ev=>{ recActive=false; resetTalk(); if(ev.error==='not-allowed'){micStatus('blocked');toast('Mic blocked — button still simulates a summon');} };
   rec.onend=()=>{ recActive=false; resetTalk(); };
   micStatus('ready (hold button)');
@@ -631,10 +630,11 @@ function doVoiceSummon(label){
 const talk=document.getElementById('talkBtn');
 function resetTalk(){ const b=document.getElementById('talkBtn'); if(b) b.textContent='🎙 Hold to summon ("over here")'; }
 function talkStart(){ if(condition==='app')return;
-  if(SR && rec && !recActive){ try{ rec.start(); recActive=true; micStatus('listening…'); talk.textContent='● listening…'; }catch(e){} } }
-function talkEnd(){ talk.textContent='🎙 Hold to summon ("over here")';
-  if(SR && rec && recActive){ try{ rec.stop(); }catch(e){} micStatus('ready (hold button)'); }
-  else { doVoiceSummon('🎙 (simulated)'); } } // no mic → fire on release
+  talk.textContent='● listening…';
+  if(SR && rec && !recActive){ try{ rec.start(); recActive=true; micStatus('listening…'); }catch(e){} } }
+function talkEnd(){ resetTalk();
+  if(SR && rec && recActive){ try{ rec.stop(); }catch(e){} recActive=false; micStatus('ready (hold button)'); }
+  doVoiceSummon('🎙'); }   // push-to-talk: releasing ALWAYS issues the summon (ASR transcript is flavour only, never a gate)
 talk.addEventListener('mousedown',talkStart); talk.addEventListener('mouseup',talkEnd);
 talk.addEventListener('touchstart',e=>{e.preventDefault();talkStart();}); talk.addEventListener('touchend',e=>{e.preventDefault();talkEnd();});
 window.addEventListener('keydown',e=>{ if(e.code==='Space'&&!e.repeat){e.preventDefault();talkStart();}

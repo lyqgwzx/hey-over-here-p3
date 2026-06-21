@@ -100,6 +100,7 @@
     <div class="stage">
       <canvas id="sim" width="960" height="620"></canvas>
       <div class="toast" id="toast"></div>
+      <div id="guideBanner" style="display:none;position:absolute;top:14px;left:50%;transform:translateX(-50%);max-width:90%;background:linear-gradient(180deg,#46e0c8,#27b89e);color:#06241f;padding:11px 18px;border-radius:12px;font-size:14.5px;line-height:1.45;box-shadow:0 8px 30px rgba(0,0,0,.45);z-index:6;text-align:center"></div>
       <div class="hint">Click a desk to sit there · then summon the robot using the panel → · keys: <kbd>Space</kbd> talk · <kbd>R</kbd> reset</div>
 
       <!-- Smartphone app (baseline condition) -->
@@ -225,6 +226,36 @@
     <div class="row" style="margin-top:16px">
       <button class="act primary" id="resClose">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- participant welcome (shows on load) -->
+<div class="modal show" id="welcomeModal">
+  <div class="card" style="width:510px;max-width:94vw">
+    <h3>Help test a voice-summoned office robot 🤖</h3>
+    <p>You'll call a small cleaning robot to your desk a few times — sometimes through a phone app, sometimes just by saying <b>“over here”</b> — and rate how each felt. About <b>3 minutes</b>.</p>
+    <div style="margin:14px 0 4px">
+      <div class="qt" style="font-size:13px;margin-bottom:7px">Your name or ID</div>
+      <input id="welcomeId" placeholder="e.g. Alex / P01" autocomplete="off"
+        style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" />
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="act primary" id="welcomeBegin">▶ Begin study (~3 min)</button>
+      <button class="act" id="welcomeSkip">Just explore</button>
+    </div>
+  </div>
+</div>
+
+<!-- completion -->
+<div class="modal" id="doneModal">
+  <div class="card" style="width:480px;max-width:94vw">
+    <h3>✓ All done — thank you! 🎉</h3>
+    <p>That’s the whole study. Your responses are saved on this page.</p>
+    <div class="row" style="margin-top:6px">
+      <button class="act primary" id="doneDownload">⬇ Download my responses</button>
+      <button class="act" id="doneClose">Close</button>
+    </div>
+    <p style="color:#93a0bd;font-size:12px;margin-top:14px">Please send the downloaded file to the researcher (Li Ya). Thank you for taking part!</p>
   </div>
 </div>
 
@@ -590,6 +621,11 @@ if(SR){
 function doVoiceSummon(label){
   if(!youWS){ toast('Click a desk first to choose where you are sitting'); return; }
   if(condition==='app'){ toast('Switch to a voice condition to use the mic'); return; }
+  if(study && study.guided){
+    if(!study.awaiting) return;        // one summon per guided step
+    study.awaiting=false;
+    summon(youWS.id, condition, 1, study.curSsl); return;
+  }
   summon(youWS.id, condition, 1);
 }
 const talk=document.getElementById('talkBtn');
@@ -617,9 +653,11 @@ document.getElementById('appMenu').addEventListener('click',()=>{
   appActions++; updAppActions(); });
 document.getElementById('appLoc').addEventListener('change',()=>{ appActions++; updAppActions(); });
 document.getElementById('appSummon').addEventListener('click',()=>{
+  if(study && study.guided && !study.awaiting) return;   // one summon per guided step
   const id=document.getElementById('appLoc').value;
   if(!id){ toast('Pick a workstation in the app first'); return; }
   appActions++; updAppActions();
+  if(study && study.guided) study.awaiting=false;
   summon(id, 'app', appActions);
   appActions=0; setTimeout(updAppActions,50);
   document.getElementById('appBody').style.display='none';
@@ -655,8 +693,10 @@ function openSurvey(rec){ sv={trust:null,effort:null};
 }
 function closeSurvey(){ document.getElementById('modal').classList.remove('show');
   pending=null;
-  if(study){ if(study.i<study.seq.length) setTimeout(runStudyStep,500);
-             else { study=null; toast('Study block complete ✓'); } } }
+  if(study){
+    if(study.guided){ setTimeout(guidedStep,450); return; }
+    if(study.i<study.seq.length) setTimeout(runStudyStep,500);
+    else { study=null; toast('Study block complete ✓'); } } }
 document.getElementById('surveyDone').addEventListener('click',()=>{
   if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; refresh(); } closeSurvey(); });
 document.getElementById('surveySkip').addEventListener('click',closeSurvey);
@@ -685,6 +725,44 @@ function runStudyStep(){
     setTimeout(()=>{ if(study && robot.state==='idle' && !robot.queue.length) summon(youWS.id,item.cond,1,study.curSsl); },1100);
   }
 }
+
+// --- guided participant mode (self-service) ------------------------------
+const GUIDE_DESK='WS3';
+function showGuide(html){ const b=document.getElementById('guideBanner'); b.style.display='block'; b.innerHTML=html; }
+function hideGuide(){ document.getElementById('guideBanner').style.display='none'; }
+function startGuidedStudy(pid){
+  participantId = pid || 'anon';
+  youWS = desks.find(d=>d.id===GUIDE_DESK);
+  document.getElementById('youWS').textContent = youWS.id+' · '+youWS.name;
+  rebuildAppLoc(); surveysOn=true;
+  const seq=[ {cond:'app'},{cond:'app'},
+    {cond:'voice',ssl:'correct'},{cond:'voice',ssl:'error'},
+    {cond:'visual',ssl:'correct'},{cond:'visual',ssl:'error'} ];
+  for(let i=seq.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [seq[i],seq[j]]=[seq[j],seq[i]]; }
+  study={seq,i:0,curSsl:null,guided:true,awaiting:false};
+  guidedStep();
+}
+function guidedStep(){
+  if(!study||!study.guided) return;
+  if(study.i>=study.seq.length){ hideGuide(); study=null; resetRobot();
+    document.getElementById('doneModal').classList.add('show'); return; }
+  const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.awaiting=true;
+  const instr = item.cond==='app'
+    ? '📱 Open the app (bottom-right): tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.'
+    : '🎙 Hold the red “summon” button on the right (or press <b>Space</b>) and say “over here”.';
+  showGuide('Step '+(study.i+1)+' of '+study.seq.length+' — call the robot to your highlighted desk.<br>'+instr);
+}
+document.getElementById('welcomeBegin').addEventListener('click',()=>{
+  const pid=document.getElementById('welcomeId').value.trim();
+  if(!pid){ document.getElementById('welcomeId').focus(); return; }
+  document.getElementById('welcomeModal').classList.remove('show');
+  startGuidedStudy(pid);
+});
+document.getElementById('welcomeSkip').addEventListener('click',()=>{
+  document.getElementById('welcomeModal').classList.remove('show');
+});
+document.getElementById('doneDownload').addEventListener('click',()=>document.getElementById('csvBtn').click());
+document.getElementById('doneClose').addEventListener('click',()=>document.getElementById('doneModal').classList.remove('show'));
 
 // --- panels / stats ------------------------------------------------------
 function refreshLive(){

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>"Hey, Over Here!" — Voice-Summoned Office Robot (Web Simulation)</title>
+<style>
+  :root{
+    --bg:#0e1320; --panel:#161d2e; --panel2:#1d2740; --line:#2b3756;
+    --text:#e8edf7; --muted:#93a0bd; --accent:#46e0c8; --accent2:#5aa0ff;
+    --warn:#ffcc55; --bad:#ff6b6b; --good:#54e08a;
+    --floor:#f2f0e9; --floorline:#e2dfd3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;}
+  #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  header{display:flex;align-items:center;gap:18px;padding:10px 18px;background:var(--panel);
+    border-bottom:1px solid var(--line);flex:0 0 auto}
+  header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
+  header h1 .sub{color:var(--muted);font-weight:500;font-size:12px;margin-left:8px}
+  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .grow{flex:1}
+  .main{display:flex;flex:1;min-height:0}
+  .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(1200px 700px at 50% 40%,#13192a,#0c111c);min-width:0}
+  canvas{max-width:100%;max-height:100%;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+  .hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:12px;color:var(--muted);
+    background:rgba(0,0,0,.35);padding:6px 12px;border-radius:8px;pointer-events:none}
+  aside{flex:0 0 332px;background:var(--panel);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;overflow-y:auto}
+  .sec{padding:13px 15px;border-bottom:1px solid var(--line)}
+  .sec h2{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 9px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden;width:100%}
+  .seg button{flex:1;background:none;border:none;color:var(--muted);padding:8px 6px;font-size:12px;cursor:pointer;
+    border-right:1px solid var(--line);transition:.15s}
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:linear-gradient(180deg,var(--accent2),#3f78d0);color:#fff;font-weight:600}
+  .seg button:hover:not(.on){color:var(--text)}
+  .desc{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+  button.act{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;
+    padding:9px 12px;font-size:13px;cursor:pointer;transition:.15s;flex:1}
+  button.act:hover{border-color:var(--accent2);background:#223052}
+  button.act.primary{background:linear-gradient(180deg,var(--accent),#27b89e);color:#06241f;border:none;font-weight:700}
+  button.act.primary:hover{filter:brightness(1.07)}
+  button.act:disabled{opacity:.4;cursor:not-allowed}
+  button.talk{background:linear-gradient(180deg,#ff7a7a,#e94f4f);color:#fff;border:none;font-weight:700}
+  .kv{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--muted)}
+  .kv b{color:var(--text);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
+  .tblwrap{max-height:178px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  .tag{display:inline-block;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:600}
+  .tag.app{background:#3a2a55;color:#d7b6ff}
+  .tag.voice{background:#143b3a;color:#79e6d6}
+  .tag.visual{background:#16314f;color:#8ec5ff}
+  .ok{color:var(--good)} .no{color:var(--bad)}
+  /* phone overlay (app baseline condition) */
+  .phone{position:absolute;right:18px;bottom:18px;width:208px;background:#0b0f18;border:6px solid #2a3450;
+    border-radius:26px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.6);display:none;z-index:5}
+  .phone.show{display:block}
+  .phone .scr{background:#121a2c;border-radius:14px;padding:12px;min-height:230px;display:flex;flex-direction:column}
+  .phone h3{margin:2px 0 10px;font-size:13px}
+  .phone select{width:100%;padding:8px;background:#0c1322;color:var(--text);border:1px solid var(--line);border-radius:8px;font-size:12px;margin-bottom:10px}
+  .phone .step{font-size:10px;color:var(--muted);margin-bottom:6px}
+  .phone .closex{position:absolute;top:8px;right:14px;color:var(--muted);cursor:pointer;font-size:16px}
+  .badge{font-size:10px;color:var(--muted)}
+  /* survey modal */
+  .modal{position:fixed;inset:0;background:rgba(4,7,14,.72);display:none;align-items:center;justify-content:center;z-index:20}
+  .modal.show{display:flex}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;width:420px;max-width:92vw}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card p{margin:0 0 16px;color:var(--muted);font-size:12px}
+  .q{margin:14px 0}
+  .q .qt{font-size:13px;margin-bottom:7px}
+  .likert{display:flex;gap:6px}
+  .likert button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:8px 0;cursor:pointer}
+  .likert button.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+  .likert .lab{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px}
+  .toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);
+    padding:8px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:8}
+  .toast.show{opacity:1}
+  a.dl{color:var(--accent)}
+  .small{font-size:11px;color:var(--muted);line-height:1.55}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;font-size:11px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>"Hey, Over Here!" <span class="sub">Voice-Summoned Office Waste Robot · Web Simulation (P3)</span></h1>
+    <div class="grow"></div>
+    <span class="pill" id="condPill">condition: voice + visual</span>
+    <span class="pill" id="micPill">mic: checking…</span>
+  </header>
+
+  <div class="main">
+    <div class="stage">
+      <canvas id="sim" width="960" height="620"></canvas>
+      <div class="toast" id="toast"></div>
+      <div class="hint">Click a desk to sit there · then summon the robot using the panel → · keys: <kbd>Space</kbd> talk · <kbd>R</kbd> reset</div>
+
+      <!-- Smartphone app (baseline condition) -->
+      <div class="phone" id="phone">
+        <span class="closex" id="phoneClose">×</span>
+        <div class="scr">
+          <h3>🗑️ BinBot App</h3>
+          <div class="step" id="appStep">Step 1 — open menu</div>
+          <button class="act" id="appMenu" style="margin-bottom:10px">☰ Menu ▾</button>
+          <div id="appBody" style="display:none">
+            <div class="step">Step 2 — choose your location</div>
+            <select id="appLoc"><option value="">— select workstation —</option></select>
+            <div class="step">Step 3 — confirm</div>
+            <button class="act primary" id="appSummon">Summon BinBot</button>
+          </div>
+          <div class="grow"></div>
+          <div class="badge" id="appActions">UI actions: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="sec">
+        <h2>Interaction condition</h2>
+        <div class="seg" id="condSeg">
+          <button data-c="app">App baseline</button>
+          <button data-c="voice">Voice only</button>
+          <button data-c="visual" class="on">Voice + visual</button>
+        </div>
+        <div class="desc" id="condDesc"></div>
+      </div>
+
+      <div class="sec">
+        <h2>You are seated at</h2>
+        <div class="kv"><span>Your workstation</span><b id="youWS">— click a desk —</b></div>
+        <div class="row" style="margin-top:9px">
+          <button class="act talk" id="talkBtn" style="flex:2">🎙 Hold to summon ("over here")</button>
+        </div>
+        <div class="desc">Voice phrases recognised: <i>"over here"</i>, <i>"come here"</i>, <i>"hey bin"</i>, <i>"robot"</i>. No mic? The button still simulates the utterance.</div>
+      </div>
+
+      <div class="sec">
+        <h2>Multi-user fairness probe</h2>
+        <div class="row">
+          <button class="act" id="injectBtn">Inject 2 simultaneous calls</button>
+          <button class="act" id="ambientBtn">Ambient traffic: off</button>
+        </div>
+        <div class="desc">Fires summons from other desks so you can watch acknowledgment, queueing and ETA mediation.</div>
+      </div>
+
+      <div class="sec">
+        <h2>Live status</h2>
+        <div class="kv"><span>Robot state</span><b id="stState">idle</b></div>
+        <div class="kv"><span>Serving</span><b id="stServe">—</b></div>
+        <div class="kv"><span>Queue</span><b id="stQueue">0</b></div>
+        <div class="kv"><span>SSL estimate</span><b id="stSSL">—</b></div>
+      </div>
+
+      <div class="sec">
+        <h2>Study session</h2>
+        <div class="row" style="margin-bottom:8px">
+          <input id="pid" placeholder="Participant ID (e.g. P01)" autocomplete="off"
+            style="flex:1;min-width:0;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:9px 12px;font-size:13px" />
+        </div>
+        <div class="row">
+          <button class="act primary" id="studyBtn">▶ Run study block</button>
+          <button class="act" id="surveyToggle">Surveys: on</button>
+        </div>
+        <div class="desc" style="margin-top:7px">Enter an ID, then run: 6 trials — App×2, plus Voice and Voice+visual each with one <b>correct</b> and one <b>mislocalized</b> summon. Data is tagged per participant; export one CSV at the end.</div>
+        <div class="kv" style="margin-top:8px"><span>Trials logged</span><b id="nTrials">0</b></div>
+        <div class="kv"><span>Mean time-to-arrival</span><b id="mTime">—</b></div>
+        <div class="kv"><span>SSL accuracy (voice)</span><b id="mSSL">—</b></div>
+      </div>
+
+      <div class="sec">
+        <h2>Collected data</h2>
+        <div class="tblwrap"><table id="logTbl"><thead><tr>
+          <th>#</th><th>cond</th><th>caller</th><th>arr(s)</th><th>acts</th><th>SSL</th><th>wait(s)</th><th>trust</th><th>effort</th>
+        </tr></thead><tbody></tbody></table></div>
+        <div class="row" style="margin-top:9px">
+          <button class="act primary" id="resultsBtn">📊 Results</button>
+          <button class="act" id="csvBtn">⬇ CSV</button>
+          <button class="act" id="clearBtn">Clear</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>About</h2>
+        <div class="small">Maps P3's research questions to a controllable testbed: <b>interaction friction</b> (actions + time), <b>calibrated trust</b> (visual feedback + post-trial rating), <b>multi-user fairness</b> (queue/ETA cues), <b>cognitive load</b> (effort rating). Built for AP0011 HCI · Li Ya.</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- post-trial survey -->
+<div class="modal" id="modal">
+  <div class="card">
+    <h3>Quick rating</h3>
+    <p id="surveyCtx">How did that summon feel?</p>
+    <div class="q">
+      <div class="qt">"I knew what the robot heard and what it was about to do." (calibrated trust)</div>
+      <div class="likert" id="qTrust"></div>
+      <div class="lab"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
+    </div>
+    <div class="q">
+      <div class="qt">"Mentally, how demanding was summoning the robot?" (NASA-TLX, single item)</div>
+      <div class="likert" id="qEffort"></div>
+      <div class="lab"><span>1 · very low</span><span>5 · very high</span></div>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button class="act primary" id="surveyDone" disabled>Submit rating</button>
+      <button class="act" id="surveySkip">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- results overlay -->
+<div class="modal" id="resultsModal">
+  <div class="card" style="width:660px;max-width:94vw">
+    <h3 style="margin-bottom:2px">Results <span id="resMeta" style="font-weight:400;color:#93a0bd;font-size:13px"></span></h3>
+    <p style="margin:0 0 12px;color:#93a0bd;font-size:12px">Aggregated live from the collected trials — the figures behind the report.</p>
+    <div id="resBody" style="font-size:13px"></div>
+    <div class="row" style="margin-top:16px">
+      <button class="act primary" id="resClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   "Hey, Over Here!" — Voice-Summoned Office Waste Robot — Web Simulation
+   Single-file HCI testbed for AP0011 final project (P3).
+   ========================================================================== */
+const cvs = document.getElementById('sim');
+const ctx = cvs.getContext('2d');
+const W = 960, H = 620;
+function fitDPR(){
+  const r = cvs.getBoundingClientRect();
+  const d = window.devicePixelRatio || 1;
+  cvs.width = W * d; cvs.height = H * d;
+  cvs.style.width = (r.width||W)+'px';
+  ctx.setTransform(d,0,0,d,0,0);
+}
+// --- world ---------------------------------------------------------------
+const NAMES = [
+  ['Alice','#ff8db0'],['Ben','#ffd166'],['Chloe','#8ec5ff'],
+  ['Dan','#b388ff'],['Eve','#54e08a'],['Finn','#ff9d5c']
+];
+const desks = [
+  {x:200,y:140},{x:480,y:115},{x:760,y:140},
+  {x:200,y:480},{x:480,y:505},{x:760,y:480}
+].map((p,i)=>({id:'WS'+(i+1), name:NAMES[i][0], color:NAMES[i][1], x:p.x, y:p.y}));
+const dock = {x:480, y:312};
+const robot = {
+  x:dock.x, y:dock.y, vx:0, vy:0, angle:-Math.PI/2, speed:128,
+  state:'idle',            // idle | listening | thinking | moving | serving | returning
+  target:null, serving:null, queue:[],
+  led:'#46e0c8', ledPhase:0, beam:0, ping:0, etaTotal:0, etaLeft:0,
+  sslBearing:null
+};
+let condition = 'visual';   // app | voice | visual
+let youWS = null;
+let participantId = '';
+let ambient = false, ambientT = 0;
+let surveysOn = true;
+const trials = [];
+let pending = null;          // trial currently being measured/awaiting survey
+let study = null;            // {seq:[], i:0}
+
+// --- helpers -------------------------------------------------------------
+const now = ()=>performance.now();
+const dist = (a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function bearing(from,to){ return Math.atan2(to.y-from.y, to.x-from.x); }
+function angDiff(a,b){ let d=Math.abs(a-b)%(2*Math.PI); return d>Math.PI?2*Math.PI-d:d; }
+function gauss(sd){ // Box-Muller
+  let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random();
+  return sd*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1700); }
+
+// --- Sound-Source Localization (simulated) -------------------------------
+// Robot's onboard mic array estimates the bearing to the caller with noise,
+// then snaps to the workstation whose bearing best matches — neighbours are
+// confusable, which is exactly the trust/fairness phenomenon under study.
+function runSSL(callerId, sslMode){
+  const caller = desks.find(d=>d.id===callerId);
+  const trueB = bearing(robot, caller);
+  if(sslMode==='correct'){                          // study: forced-correct trial
+    return { estBearing: trueB + gauss(0.04), picked: caller, correct:true };
+  }
+  if(sslMode==='error'){                             // study: forced mislocalization → nearest neighbour
+    let nb=null, nd=1e9;
+    for(const d of desks){ if(d.id===callerId) continue;
+      const diff=angDiff(trueB, bearing(robot,d)); if(diff<nd){ nd=diff; nb=d; } }
+    return { estBearing: bearing(robot,nb)+gauss(0.05), picked:nb, correct:false };
+  }
+  const noisy = trueB + gauss(0.20);                 // free play: realistic ~±11° error
+  let best=null, bd=1e9;
+  for(const d of desks){
+    const diff = angDiff(noisy, bearing(robot,d));
+    if(diff<bd){ bd=diff; best=d; }
+  }
+  return { estBearing:noisy, picked:best, correct: best.id===callerId };
+}
+
+// --- summon pipeline -----------------------------------------------------
+function makeRequest(callerId, method, uiActions, sslMode){
+  const ssl = (method==='app') ? {picked:desks.find(d=>d.id===callerId),correct:true,estBearing:null}
+                               : runSSL(callerId, sslMode);
+  return {
+    callerId, method, uiActions,
+    targetId: ssl.picked.id, sslCorrect: ssl.correct, estBearing: ssl.estBearing,
+    tIntent: now(), tArrive: null, tQueued: now(), waited: 0, acked:false
+  };
+}
+function summon(callerId, method, uiActions, sslMode){
+  const req = makeRequest(callerId, method, uiActions, sslMode);
+  robot.queue.push(req);
+  const c = desks.find(d=>d.id===callerId);
+  toast((method==='app'?'📱':'🗣️') + ' ' + c.name + ' summoned BinBot' +
+        (method!=='app' && !req.sslCorrect ? '  (SSL → '+desks.find(d=>d.id===req.targetId).name+'?)' : ''));
+  refresh();
+}
+
+function startNext(){
+  if(robot.state!=='idle' && robot.state!=='returning') return;
+  if(!robot.queue.length) return;
+  const req = robot.queue[0];
+  req.waited = (now()-req.tQueued)/1000;
+  robot.serving = req;
+  robot.sslBearing = req.estBearing;
+  robot.state = 'listening';
+  robot.stateT = now();
+}
+
+// --- main update loop ----------------------------------------------------
+let last = now();
+function loop(){
+  const t = now(); const dt = Math.min(0.05,(t-last)/1000); last=t;
+  update(dt); render(t); requestAnimationFrame(loop);
+}
+function update(dt){
+  robot.ledPhase += dt*4;
+  if(robot.ping>0) robot.ping -= dt;
+
+  // ambient traffic
+  if(ambient){ ambientT-=dt; if(ambientT<=0){ ambientT = 4+Math.random()*4;
+    const pool = desks.filter(d=>!youWS||d.id!==youWS.id);
+    const d = pool[(Math.random()*pool.length)|0];
+    summon(d.id, Math.random()<0.5?'voice':'visual', 1);
+  }}
+
+  // pick up next queued request when free
+  if((robot.state==='idle'||robot.state==='returning') && robot.queue.length) startNext();
+
+  const r = robot;
+  switch(r.state){
+    case 'listening': // brief "heard you" beat
+      if(now()-r.stateT>500){ r.state='thinking'; r.stateT=now(); r.beam=1; }
+      break;
+    case 'thinking': // SSL resolving
+      if(now()-r.stateT>650){
+        r.state='moving';
+        r.target = desks.find(d=>d.id===r.serving.targetId);
+        const dd = dist(r, r.target);
+        r.etaTotal = dd/r.speed; r.etaLeft = r.etaTotal;
+        for(const q of robot.queue) q.acked=true; // everyone in queue acknowledged
+      }
+      break;
+    case 'moving': {
+      moveTo(r.target, dt);
+      r.etaLeft = Math.max(0, dist(r,r.target)/r.speed);
+      if(dist(r, r.target) < 6){
+        r.state='serving'; r.stateT=now(); r.ping=1.0; r.beam=0;
+        const req=r.serving; req.tArrive=now();
+        completeTrial(req);
+      }
+      break; }
+    case 'serving':
+      if(now()-r.stateT>900){
+        robot.queue.shift();
+        robot.serving=null; r.sslBearing=null;
+        r.state = robot.queue.length ? 'idle' : 'returning';
+        r.target = robot.queue.length ? null : dock;
+      }
+      break;
+    case 'returning':
+      moveTo(dock, dt);
+      if(dist(r,dock)<6){ r.state='idle'; r.target=null; }
+      break;
+  }
+  // smooth idle heading toward dock orientation
+  if(r.state==='idle'){ r.angle += Math.sin(now()/900)*0.0015; }
+  refreshLive();
+}
+function moveTo(tgt, dt){
+  const b = bearing(robot, tgt);
+  robot.angle = b;
+  const step = robot.speed*dt;
+  const d = dist(robot,tgt);
+  robot.x += Math.cos(b)*Math.min(step,d);
+  robot.y += Math.sin(b)*Math.min(step,d);
+}
+
+// --- trial completion / survey ------------------------------------------
+function completeTrial(req){
+  const rec = {
+    n: trials.length+1,
+    participant: participantId || 'anon',
+    condition: req.method,
+    caller: desks.find(d=>d.id===req.callerId).name,
+    target: desks.find(d=>d.id===req.targetId).name,
+    arrival: ((req.tArrive-req.tIntent)/1000),
+    actions: req.uiActions,
+    sslCorrect: req.method==='app'? null : req.sslCorrect,
+    wait: req.waited,
+    trust: null, effort: null
+  };
+  trials.push(rec);
+  if(surveysOn){ pending = rec; openSurvey(rec); }
+  refresh();
+  // study sequencing
+  if(study){ study.i++; if(study.i<study.seq.length){ if(!surveysOn) setTimeout(runStudyStep,700);}
+             else if(!surveysOn){ study=null; toast('Study block complete ✓'); } }
+}
+
+// --- rendering -----------------------------------------------------------
+function render(t){
+  ctx.clearRect(0,0,W,H);
+  // floor
+  roundRect(8,8,W-16,H-16,18); ctx.fillStyle='#f2f0e9'; ctx.fill();
+  ctx.save(); roundRect(8,8,W-16,H-16,18); ctx.clip();
+  ctx.strokeStyle='#e6e3d7'; ctx.lineWidth=1;
+  for(let x=40;x<W;x+=40){ ctx.beginPath();ctx.moveTo(x,8);ctx.lineTo(x,H-8);ctx.stroke(); }
+  for(let y=40;y<H;y+=40){ ctx.beginPath();ctx.moveTo(8,y);ctx.lineTo(W-8,y);ctx.stroke(); }
+  ctx.restore();
+  roundRect(8,8,W-16,H-16,18); ctx.strokeStyle='#cfccbf'; ctx.lineWidth=2; ctx.stroke();
+
+  // dock
+  ctx.save(); ctx.translate(dock.x,dock.y);
+  roundRect(-30,-22,60,44,10); ctx.fillStyle='#dfe9e6'; ctx.fill();
+  ctx.strokeStyle='#aebcc0'; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#9fb0b4'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText('⚡ dock',0,4);
+  ctx.restore();
+
+  // desks
+  for(const d of desks){
+    const calling = robot.queue.some(q=>q.callerId===d.id);
+    const isTarget = robot.serving && robot.serving.targetId===d.id;
+    const isYou = youWS && youWS.id===d.id;
+    ctx.save(); ctx.translate(d.x,d.y);
+    if(isTarget){ ctx.beginPath(); ctx.arc(0,0,46,0,7); ctx.fillStyle='rgba(70,224,200,.18)'; ctx.fill(); }
+    // desk
+    roundRect(-42,-26,84,40,8); ctx.fillStyle='#cfd8e6'; ctx.fill();
+    roundRect(-42,-26,84,40,8); ctx.strokeStyle= isYou?'#27b89e':'#aab6c8'; ctx.lineWidth=isYou?3:1.5; ctx.stroke();
+    // monitor
+    roundRect(-14,-20,28,14,3); ctx.fillStyle='#5b6b86'; ctx.fill();
+    // occupant chair
+    ctx.beginPath(); ctx.arc(0,26,12,0,7); ctx.fillStyle=d.color; ctx.fill();
+    ctx.fillStyle='#10131b'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(d.name[0],0,26);
+    // label
+    ctx.fillStyle='#39424f'; ctx.font='11px sans-serif'; ctx.textBaseline='alphabetic';
+    ctx.fillText(d.id+' · '+d.name, 0, -32);
+    if(isYou){ ctx.fillStyle='#138a73'; ctx.font='bold 10px sans-serif'; ctx.fillText('YOU', 0, 50); }
+    // calling badge w/ ack + ETA
+    if(calling){
+      const q = robot.queue.find(x=>x.callerId===d.id);
+      const isServed = robot.serving===q;
+      const idx = robot.queue.indexOf(q);
+      const pulse = 0.5+0.5*Math.sin(robot.ledPhase*1.5);
+      ctx.beginPath(); ctx.arc(34,-26,8+pulse*2,0,7); ctx.fillStyle='rgba(255,107,107,.9)'; ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 9px sans-serif'; ctx.fillText('!',34,-23);
+      let msg;
+      if(!q.acked) msg='calling…';
+      else if(isServed){
+        if(robot.state==='moving') msg='ETA '+robot.etaLeft.toFixed(0)+'s'+(!q.sslCorrect&&q.method!=='app'?' · SSL?':'');
+        else if(robot.state==='listening'||robot.state==='thinking') msg='heard you…';
+        else msg='arriving';
+      } else msg='queued #'+idx;
+      ctx.fillStyle='#b23b3b'; ctx.font='10px sans-serif'; ctx.fillText(msg, 0, 62);
+    }
+    ctx.restore();
+  }
+
+  // SSL beam (thinking/moving, visual condition only)
+  if(condition!=='voice' && (robot.state==='thinking'||robot.state==='moving') && robot.sslBearing!=null && condition==='visual'){
+    drawBeam(robot.sslBearing);
+  } else if(condition!=='visual' && robot.serving && (robot.state==='thinking') && condition==='voice'){
+    /* voice-only: no visual feedback shown to user */
+  }
+  // path line (visual)
+  if(condition==='visual' && robot.state==='moving' && robot.target){
+    ctx.beginPath(); ctx.moveTo(robot.x,robot.y); ctx.lineTo(robot.target.x,robot.target.y);
+    ctx.strokeStyle='rgba(70,224,200,.5)'; ctx.lineWidth=2; ctx.setLineDash([6,7]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  drawRobot(t);
+  refreshLive();
+}
+function drawBeam(b){
+  ctx.save(); ctx.translate(robot.x,robot.y); ctx.rotate(b);
+  const g=ctx.createLinearGradient(0,0,260,0); g.addColorStop(0,'rgba(90,160,255,.45)'); g.addColorStop(1,'rgba(90,160,255,0)');
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,260,-0.22,0.22); ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+  ctx.restore();
+}
+function drawRobot(t){
+  const r=robot;
+  // arrival ping
+  if(r.ping>0){ ctx.beginPath(); ctx.arc(r.x,r.y,(1-r.ping)*60+18,0,7);
+    ctx.strokeStyle='rgba(84,224,138,'+r.ping+')'; ctx.lineWidth=3; ctx.stroke(); }
+  ctx.save(); ctx.translate(r.x,r.y);
+  // shadow
+  ctx.beginPath(); ctx.ellipse(0,4,22,20,0,0,7); ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fill();
+  // LED ring (state colour)
+  let col = '#46e0c8';
+  if(r.state==='listening') col='#5aa0ff';
+  else if(r.state==='thinking') col='#ffcc55';
+  else if(r.state==='moving') col='#54e08a';
+  else if(r.state==='serving') col='#54e08a';
+  else if(r.state==='idle'||r.state==='returning') col='#3a7d72';
+  // only show rich LED feedback when condition === visual (calibrated-trust manipulation)
+  const showLED = condition==='visual' || r.state==='idle' || r.state==='returning';
+  const ringPulse = 1+0.10*Math.sin(r.ledPhase);
+  ctx.beginPath(); ctx.arc(0,0,19*(showLED?ringPulse:1),0,7);
+  ctx.fillStyle = showLED? col : '#6b7686'; ctx.globalAlpha= showLED?0.95:0.6; ctx.fill(); ctx.globalAlpha=1;
+  // body (bin)
+  ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.fillStyle='#eef2f7'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,14,0,7); ctx.strokeStyle='#c2ccda'; ctx.lineWidth=2; ctx.stroke();
+  // lid line + bin slot
+  ctx.strokeStyle='#aeb9c8'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(0,0,8,0,7); ctx.stroke();
+  // facing indicator (mic/eye)
+  ctx.save(); ctx.rotate(r.angle);
+  ctx.beginPath(); ctx.arc(10,0,3,0,7); ctx.fillStyle='#3a4658'; ctx.fill();
+  ctx.restore();
+  // label
+  ctx.fillStyle='#2b3344'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('BinBot', 0, 30);
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+// --- UI: conditions ------------------------------------------------------
+const CONDDESC = {
+  app:   'Baseline. Summon only through the BinBot phone app: open menu → pick your workstation → confirm. High explicit-action cost; you must know your location. No SSL.',
+  voice: 'Voice only. Say "over here" and the robot localises you by sound (SSL) and drives over — but gives no light/screen feedback, so you cannot tell what it heard until it arrives.',
+  visual:'Voice + visual. Same voice summon, plus an LED ring, an SSL direction beam, the predicted desk, and a live ETA — the calibrated-trust condition.'
+};
+function setCondition(c){
+  condition=c;
+  document.querySelectorAll('#condSeg button').forEach(b=>b.classList.toggle('on',b.dataset.c===c));
+  document.getElementById('condDesc').textContent = CONDDESC[c];
+  document.getElementById('condPill').textContent = 'condition: '+({app:'app baseline',voice:'voice only',visual:'voice + visual'})[c];
+  document.getElementById('phone').classList.toggle('show', c==='app');
+  document.getElementById('talkBtn').disabled = (c==='app');
+}
+document.getElementById('condSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setCondition(b.dataset.c); });
+
+// --- UI: pick your desk (click canvas) -----------------------------------
+cvs.addEventListener('click', e=>{
+  const r=cvs.getBoundingClientRect();
+  const x=(e.clientX-r.left)*(W/r.width), y=(e.clientY-r.top)*(H/r.height);
+  let hit=null; for(const d of desks){ if(Math.abs(x-d.x)<48 && Math.abs(y-d.y)<40) hit=d; }
+  if(hit){ youWS=hit; document.getElementById('youWS').textContent = hit.id+' · '+hit.name;
+    rebuildAppLoc(); toast('You are now seated at '+hit.name+"'s desk"); }
+});
+
+// --- UI: voice summon (real Web Speech + fallback) -----------------------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, recActive=false;
+const PHRASES=['over here','come here','hey bin','bin','robot','hey'];
+function micStatus(s){ document.getElementById('micPill').textContent='mic: '+s; }
+if(SR){
+  rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=3;
+  rec.onresult=ev=>{ let txt=''; for(const r of ev.results) txt+=r[0].transcript+' ';
+    txt=txt.toLowerCase(); const ok=PHRASES.some(p=>txt.includes(p));
+    if(ok) doVoiceSummon('🎙 "'+txt.trim()+'"'); else toast('Heard: "'+txt.trim()+'" — not a summon phrase'); };
+  rec.onerror=ev=>{ recActive=false; resetTalk(); if(ev.error==='not-allowed'){micStatus('blocked');toast('Mic blocked — button still simulates a summon');} };
+  rec.onend=()=>{ recActive=false; resetTalk(); };
+  micStatus('ready (hold button)');
+} else { micStatus('unavailable — using simulated voice'); }
+
+function doVoiceSummon(label){
+  if(!youWS){ toast('Click a desk first to choose where you are sitting'); return; }
+  if(condition==='app'){ toast('Switch to a voice condition to use the mic'); return; }
+  summon(youWS.id, condition, 1);
+}
+const talk=document.getElementById('talkBtn');
+function resetTalk(){ const b=document.getElementById('talkBtn'); if(b) b.textContent='🎙 Hold to summon ("over here")'; }
+function talkStart(){ if(condition==='app')return;
+  if(SR && rec && !recActive){ try{ rec.start(); recActive=true; micStatus('listening…'); talk.textContent='● listening…'; }catch(e){} } }
+function talkEnd(){ talk.textContent='🎙 Hold to summon ("over here")';
+  if(SR && rec && recActive){ try{ rec.stop(); }catch(e){} micStatus('ready (hold button)'); }
+  else { doVoiceSummon('🎙 (simulated)'); } } // no mic → fire on release
+talk.addEventListener('mousedown',talkStart); talk.addEventListener('mouseup',talkEnd);
+talk.addEventListener('touchstart',e=>{e.preventDefault();talkStart();}); talk.addEventListener('touchend',e=>{e.preventDefault();talkEnd();});
+window.addEventListener('keydown',e=>{ if(e.code==='Space'&&!e.repeat){e.preventDefault();talkStart();}
+  if(e.key==='r'||e.key==='R'){ resetRobot(); } });
+window.addEventListener('keyup',e=>{ if(e.code==='Space'){e.preventDefault();talkEnd();} });
+
+// --- UI: app baseline phone ---------------------------------------------
+let appActions=0;
+function rebuildAppLoc(){ const s=document.getElementById('appLoc');
+  s.innerHTML='<option value="">— select workstation —</option>'+
+    desks.map(d=>`<option value="${d.id}">${d.id} · ${d.name}</option>`).join('');
+  if(youWS) s.value=youWS.id; }
+document.getElementById('appMenu').addEventListener('click',()=>{
+  document.getElementById('appBody').style.display='block';
+  document.getElementById('appStep').textContent='Step 2 — choose your location';
+  appActions++; updAppActions(); });
+document.getElementById('appLoc').addEventListener('change',()=>{ appActions++; updAppActions(); });
+document.getElementById('appSummon').addEventListener('click',()=>{
+  const id=document.getElementById('appLoc').value;
+  if(!id){ toast('Pick a workstation in the app first'); return; }
+  appActions++; updAppActions();
+  summon(id, 'app', appActions);
+  appActions=0; setTimeout(updAppActions,50);
+  document.getElementById('appBody').style.display='none';
+  document.getElementById('appStep').textContent='Step 1 — open menu';
+});
+document.getElementById('phoneClose').addEventListener('click',()=>setCondition('visual'));
+function updAppActions(){ document.getElementById('appActions').textContent='UI actions: '+appActions; }
+
+// --- UI: multi-user ------------------------------------------------------
+document.getElementById('injectBtn').addEventListener('click',()=>{
+  const pool=desks.filter(d=>!youWS||d.id!==youWS.id);
+  for(let i=0;i<2;i++){ const d=pool[(Math.random()*pool.length)|0];
+    summon(d.id, Math.random()<0.5?'voice':'visual',1); }
+});
+document.getElementById('ambientBtn').addEventListener('click',e=>{
+  ambient=!ambient; ambientT=2; e.target.textContent='Ambient traffic: '+(ambient?'on':'off');
+  e.target.classList.toggle('primary',ambient);
+});
+
+// --- survey --------------------------------------------------------------
+let sv={trust:null,effort:null};
+function buildLikert(elId,key){ const el=document.getElementById(elId); el.innerHTML='';
+  for(let i=1;i<=5;i++){ const b=document.createElement('button'); b.textContent=i;
+    b.onclick=()=>{ sv[key]=i; [...el.children].forEach(c=>c.classList.toggle('on',c===b));
+      document.getElementById('surveyDone').disabled=!(sv.trust&&sv.effort); }; el.appendChild(b);} }
+buildLikert('qTrust','trust'); buildLikert('qEffort','effort');
+function openSurvey(rec){ sv={trust:null,effort:null};
+  document.querySelectorAll('.likert button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('surveyDone').disabled=true;
+  document.getElementById('surveyCtx').textContent =
+    'Condition: '+rec.condition+' · caller: '+rec.caller+' · arrived in '+rec.arrival.toFixed(1)+'s';
+  document.getElementById('modal').classList.add('show');
+}
+function closeSurvey(){ document.getElementById('modal').classList.remove('show');
+  pending=null;
+  if(study){ if(study.i<study.seq.length) setTimeout(runStudyStep,500);
+             else { study=null; toast('Study block complete ✓'); } } }
+document.getElementById('surveyDone').addEventListener('click',()=>{
+  if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; refresh(); } closeSurvey(); });
+document.getElementById('surveySkip').addEventListener('click',closeSurvey);
+document.getElementById('surveyToggle').addEventListener('click',e=>{
+  surveysOn=!surveysOn; e.target.textContent='Surveys: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
+
+// --- study mode (within-subjects, counterbalanced) -----------------------
+document.getElementById('studyBtn').addEventListener('click',()=>{
+  if(!youWS){ toast('Click a desk first — you are the participant'); return; }
+  const pid=document.getElementById('pid').value.trim();
+  if(!pid){ toast('Enter a Participant ID first'); document.getElementById('pid').focus(); return; }
+  participantId=pid;
+  // within-subjects: App×2, Voice & Voice+visual each with one correct + one mislocalized summon
+  const seq=[ {cond:'app'},{cond:'app'},
+    {cond:'voice',ssl:'correct'},{cond:'voice',ssl:'error'},
+    {cond:'visual',ssl:'correct'},{cond:'visual',ssl:'error'} ];
+  for(let i=seq.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [seq[i],seq[j]]=[seq[j],seq[i]]; }
+  study={seq,i:0,curSsl:null}; toast(pid+' · study block: '+seq.length+' trials'); runStudyStep();
+});
+function runStudyStep(){
+  if(!study) return;
+  if(study.i>=study.seq.length){ study=null; toast('Study block complete ✓ — change ID for the next person, or Export CSV'); return; }
+  const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null;
+  toast('Trial '+(study.i+1)+'/'+study.seq.length+' — '+item.cond+(item.ssl?(' ['+item.ssl+']'):'')+(item.cond==='app'?' (use the phone)':' (press Space / hold mic)'));
+  if(item.cond!=='app'){ // auto-fire voice/visual after a beat so the block flows
+    setTimeout(()=>{ if(study && robot.state==='idle' && !robot.queue.length) summon(youWS.id,item.cond,1,study.curSsl); },1100);
+  }
+}
+
+// --- panels / stats ------------------------------------------------------
+function refreshLive(){
+  document.getElementById('stState').textContent=robot.state;
+  document.getElementById('stServe').textContent=robot.serving? desks.find(d=>d.id===robot.serving.callerId).name : '—';
+  document.getElementById('stQueue').textContent=robot.queue.length;
+  document.getElementById('stSSL').textContent= robot.serving && robot.serving.method!=='app'
+     ? (robot.serving.sslCorrect?'correct':'→ '+desks.find(d=>d.id===robot.serving.targetId).name+' (off)') : '—';
+}
+function refresh(){
+  // table
+  const tb=document.querySelector('#logTbl tbody'); tb.innerHTML='';
+  for(const r of trials){
+    const tr=document.createElement('tr');
+    const ssl = r.sslCorrect===null?'<span class="badge">n/a</span>':(r.sslCorrect?'<span class="ok">✓</span>':'<span class="no">✗</span>');
+    tr.innerHTML=`<td>${r.n}</td><td><span class="tag ${r.condition}">${r.condition}</span></td>
+      <td>${r.caller}</td><td>${r.arrival.toFixed(1)}</td><td>${r.actions}</td>
+      <td>${ssl}</td><td>${r.wait.toFixed(1)}</td><td>${r.trust??'—'}</td><td>${r.effort??'—'}</td>`;
+    tb.appendChild(tr);
+  }
+  document.querySelector('.tblwrap').scrollTop=9e9;
+  // stats
+  document.getElementById('nTrials').textContent=trials.length;
+  if(trials.length){
+    const mt=trials.reduce((s,r)=>s+r.arrival,0)/trials.length;
+    document.getElementById('mTime').textContent=mt.toFixed(1)+'s';
+    const v=trials.filter(r=>r.sslCorrect!==null);
+    document.getElementById('mSSL').textContent= v.length? Math.round(100*v.filter(r=>r.sslCorrect).length/v.length)+'%':'—';
+  } else { document.getElementById('mTime').textContent='—'; document.getElementById('mSSL').textContent='—'; }
+}
+document.getElementById('csvBtn').addEventListener('click',()=>{
+  if(!trials.length){ toast('No data yet'); return; }
+  const head=['participant_id','trial','condition','caller','target_desk','time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','effort_1to5'];
+  const rows=trials.map(r=>[r.participant||'anon',r.n,r.condition,r.caller,r.target||'',r.arrival.toFixed(2),r.actions,
+    r.sslCorrect===null?'':r.sslCorrect?1:0, r.wait.toFixed(2), r.trust??'', r.effort??'']);
+  const csv=[head,...rows].map(a=>a.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='heyoverhere_study_data.csv'; a.click();
+  URL.revokeObjectURL(url); toast('Exported '+trials.length+' trials');
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{ trials.length=0; refresh(); toast('Data cleared'); });
+
+// --- results view --------------------------------------------------------
+function rMean(arr,f){ return arr.length ? arr.reduce((s,x)=>s+f(x),0)/arr.length : null; }
+function rFmt(v,suf){ return v==null ? '—' : (v.toFixed(1)+(suf||'')); }
+function rBar(label, val, max, color, suffix){
+  const pct = val==null ? 0 : Math.max(2, Math.min(100, 100*val/max));
+  return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+    <div style="width:124px;color:#cdd6e6;flex:0 0 auto;font-size:12px">${label}</div>
+    <div style="flex:1;background:#0e1320;border:1px solid #2b3756;border-radius:7px;height:18px">
+      <div style="width:${pct}%;height:100%;background:${color};border-radius:7px"></div>
+    </div>
+    <div style="width:50px;text-align:right;font-weight:600;color:${color}">${rFmt(val,suffix)}</div>
+  </div>`;
+}
+function rSection(t){ return `<div style="margin:13px 0 5px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:#93a0bd">${t}</div>`; }
+const RCOL={app:'#b388ff',voice:'#46e0c8',visual:'#5aa0ff'};
+function renderResults(){
+  const by={app:[],voice:[],visual:[]};
+  for(const t of trials) if(by[t.condition]) by[t.condition].push(t);
+  const parts=new Set(trials.map(t=>t.participant)).size;
+  document.getElementById('resMeta').textContent = `· ${trials.length} trials · ${parts} participant(s)`;
+  let html='';
+  const times = ['app','voice','visual'].map(c=>({c,v:rMean(by[c],t=>t.arrival)}));
+  const tmax = Math.max(0.1,...times.map(x=>x.v||0));
+  html += rSection('Time to arrival (s) — lower is better');
+  for(const x of times) html += rBar(x.c, x.v, tmax, RCOL[x.c], 's');
+  html += rSection('Calibrated trust (1–5) when the robot located you…');
+  let any=false;
+  for(const c of ['voice','visual']){
+    const corr=rMean(by[c].filter(t=>t.sslCorrect===true&&t.trust!=null),t=>t.trust);
+    const err =rMean(by[c].filter(t=>t.sslCorrect===false&&t.trust!=null),t=>t.trust);
+    if(corr!=null||err!=null) any=true;
+    html += rBar(c+' · correct',    corr, 5, '#54e08a', '');
+    html += rBar(c+' · mislocated', err,  5, '#ff6b6b', '');
+  }
+  if(!any) html += `<div style="color:#93a0bd;font-size:12px;margin:4px 0">No trust ratings yet — run a study block with surveys on.</div>`;
+  html += `<div style="color:#93a0bd;font-size:11px;margin-top:5px">Key question: does the visual condition keep trust from collapsing when the robot goes to the wrong desk?</div>`;
+  const effs = ['app','voice','visual'].map(c=>({c,v:rMean(by[c].filter(t=>t.effort!=null),t=>t.effort)}));
+  html += rSection('Effort · NASA-TLX (1–5) — lower is better');
+  for(const x of effs) html += rBar(x.c, x.v, 5, RCOL[x.c], '');
+  document.getElementById('resBody').innerHTML = html;
+}
+document.getElementById('resultsBtn').addEventListener('click',()=>{
+  if(!trials.length){ toast('No data yet — run a study block'); return; }
+  renderResults(); document.getElementById('resultsModal').classList.add('show');
+});
+document.getElementById('resClose').addEventListener('click',()=>document.getElementById('resultsModal').classList.remove('show'));
+
+// --- reset ---------------------------------------------------------------
+function resetRobot(){ robot.queue.length=0; robot.serving=null; robot.state='idle';
+  robot.x=dock.x; robot.y=dock.y; robot.target=null; robot.sslBearing=null; toast('Robot reset'); }
+
+// --- boot ----------------------------------------------------------------
+window.addEventListener('resize',fitDPR);
+fitDPR(); setCondition('visual'); rebuildAppLoc(); refresh(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

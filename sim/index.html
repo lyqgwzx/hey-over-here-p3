@@ -30,6 +30,9 @@
   aside{flex:0 0 332px;background:var(--panel);border-left:1px solid var(--line);
     display:flex;flex-direction:column;overflow-y:auto}
   .sec{padding:13px 15px;border-bottom:1px solid var(--line)}
+  body.pmode aside .sec{display:none}
+  body.pmode aside .sec.pkeep{display:block}
+  body.pmode .hint{display:none}
   .sec h2{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 9px}
   .row{display:flex;gap:8px;flex-wrap:wrap}
   .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden;width:100%}
@@ -133,7 +136,7 @@
         <div class="desc" id="condDesc"></div>
       </div>
 
-      <div class="sec">
+      <div class="sec pkeep">
         <h2>You are seated at</h2>
         <div class="kv"><span>Your workstation</span><b id="youWS">— click a desk —</b></div>
         <div class="row" style="margin-top:9px">
@@ -722,6 +725,7 @@ const GUIDE_DESK='WS3';
 function showGuide(html){ const b=document.getElementById('guideBanner'); b.style.display='block'; b.innerHTML=html; }
 function hideGuide(){ document.getElementById('guideBanner').style.display='none'; }
 function startGuidedStudy(pid){
+  document.body.classList.add('pmode');   // participant view: hide researcher-only panels
   participantId = pid || 'anon';
   youWS = desks.find(d=>d.id===GUIDE_DESK);
   document.getElementById('youWS').textContent = youWS.id+' · '+youWS.name;
@@ -735,7 +739,7 @@ function startGuidedStudy(pid){
 }
 function guidedStep(){
   if(!study||!study.guided) return;
-  if(study.i>=study.seq.length){ hideGuide(); study=null; resetRobot();
+  if(study.i>=study.seq.length){ hideGuide(); study=null; resetRobot(); document.body.classList.remove('pmode');
     document.getElementById('doneModal').classList.add('show'); return; }
   const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.awaiting=true;
   const instr = item.cond==='app'
@@ -750,6 +754,7 @@ document.getElementById('welcomeBegin').addEventListener('click',()=>{
   startGuidedStudy(pid);
 });
 document.getElementById('welcomeSkip').addEventListener('click',()=>{
+  document.body.classList.remove('pmode');
   document.getElementById('welcomeModal').classList.remove('show');
 });
 document.getElementById('doneDownload').addEventListener('click',()=>document.getElementById('csvBtn').click());

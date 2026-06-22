@@ -161,15 +161,11 @@
 
       <div class="sec">
         <h2>The experiment (collect data)</h2>
-        <div class="row" style="margin-bottom:8px">
-          <input id="pid" placeholder="Participant ID (e.g. P01)" autocomplete="off"
-            style="flex:1;min-width:0;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:9px 12px;font-size:13px" />
-        </div>
         <div class="row">
-          <button class="act primary" id="studyBtn">▶ Run the experiment</button>
+          <button class="act primary" id="startSessionBtn">▶ Start a participant session</button>
           <button class="act" id="surveyToggle">Ratings: on</button>
         </div>
-        <div class="desc" style="margin-top:7px">The real study for <b>one person</b>: type their ID → they do <b>6 guided summons</b> (app, voice, voice+visual — including times the robot goes to the <b>wrong</b> desk) → rate each. This is what produces your data. <i>Summoning on your own above is just free practice, not the study.</i></div>
+        <div class="desc" style="margin-top:7px">Runs the experiment for <b>one person</b>: a short welcome asks their ID, then they do <b>6 guided summons</b> (app, voice, voice+visual — including times the robot goes to the <b>wrong</b> desk) and rate each. Their data lands in the table below. <i>(Summoning on your own above is just free practice.)</i></div>
         <div class="kv" style="margin-top:8px"><span>Trials logged</span><b id="nTrials">0</b></div>
         <div class="kv"><span>Mean time-to-arrival</span><b id="mTime">—</b></div>
         <div class="kv"><span>SSL accuracy (voice)</span><b id="mSSL">—</b></div>
@@ -241,7 +237,7 @@
         style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" />
     </div>
     <div class="row" style="margin-top:16px">
-      <button class="act primary" id="welcomeBegin">▶ Begin study (~3 min)</button>
+      <button class="act primary" id="welcomeBegin">▶ Begin the experiment (~3 min)</button>
       <button class="act" id="welcomeSkip">Just explore</button>
     </div>
   </div>
@@ -705,17 +701,11 @@ document.getElementById('surveyToggle').addEventListener('click',e=>{
   surveysOn=!surveysOn; e.target.textContent='Ratings: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
 
 // --- study mode (within-subjects, counterbalanced) -----------------------
-document.getElementById('studyBtn').addEventListener('click',()=>{
-  if(!youWS){ toast('Click a desk first — you are the participant'); return; }
-  const pid=document.getElementById('pid').value.trim();
-  if(!pid){ toast('Enter a Participant ID first'); document.getElementById('pid').focus(); return; }
-  participantId=pid;
-  // within-subjects: App×2, Voice & Voice+visual each with one correct + one mislocalized summon
-  const seq=[ {cond:'app'},{cond:'app'},
-    {cond:'voice',ssl:'correct'},{cond:'voice',ssl:'error'},
-    {cond:'visual',ssl:'correct'},{cond:'visual',ssl:'error'} ];
-  for(let i=seq.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [seq[i],seq[j]]=[seq[j],seq[i]]; }
-  study={seq,i:0,curSsl:null}; toast(pid+' · experiment started ('+seq.length+' summons)'); runStudyStep();
+document.getElementById('startSessionBtn').addEventListener('click',()=>{
+  // single entry point: open the guided welcome (which asks for the ID and runs the guided experiment)
+  document.getElementById('welcomeId').value='';
+  document.getElementById('welcomeModal').classList.add('show');
+  setTimeout(()=>document.getElementById('welcomeId').focus(),60);
 });
 function runStudyStep(){
   if(!study) return;

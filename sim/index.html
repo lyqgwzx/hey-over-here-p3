@@ -245,9 +245,19 @@
     <h3>Help test a voice-summoned office robot 🤖</h3>
     <p>Imagine you’re at your desk in a shared office and there’s a bit of rubbish to clear. You’ll call a small cleaning robot over a few times — sometimes through a phone app, sometimes just by saying <b>“over here”</b> — and after each one, rate how it felt. Each screen sets the scene for you; there are <b>no right or wrong answers</b>, just go with your gut. About <b>3 minutes</b>.</p>
     <div style="margin:14px 0 4px">
-      <div class="qt" style="font-size:13px;margin-bottom:7px">Your name or ID</div>
-      <input id="welcomeId" placeholder="e.g. Alex / P01" autocomplete="off"
-        style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" />
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <div class="qt" style="font-size:13px;margin-bottom:7px">Name · 姓名</div>
+          <input id="welcomeName" placeholder="e.g. Alex" autocomplete="off"
+            style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" />
+        </div>
+        <div style="flex:1">
+          <div class="qt" style="font-size:13px;margin-bottom:7px">Student ID · 学号</div>
+          <input id="welcomeSid" placeholder="e.g. 12345678" autocomplete="off"
+            style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" />
+        </div>
+      </div>
+      <div id="welcomeHint" style="color:#93a0bd;font-size:12px;margin-top:9px">Fill in at least one — name or student ID. · 至少填一个即可。</div>
     </div>
     <div class="row" style="margin-top:16px">
       <button class="act primary" id="welcomeBegin">▶ Begin the experiment (~3 min)</button>
@@ -304,6 +314,8 @@ const robot = {
 let condition = 'visual';   // app | voice | visual
 let youWS = null;
 let participantId = '';
+let participantName = '';   // free-text name (optional)
+let participantSid = '';    // student ID (optional) — at least one of name/sid required
 let ambient = false, ambientT = 0;
 let surveysOn = true;
 const trials = [];   // accumulates across every participant on this machine → one combined CSV at the end
@@ -454,6 +466,8 @@ function completeTrial(req){
     n: trials.length+1,
     step: study ? study.i+1 : '',              // order within this participant's guided session (1–6)
     participant: participantId || 'anon',
+    name: participantName || '',               // free-text name (may be blank)
+    sid: participantSid || '',                 // student ID (may be blank)
     seat: youWS ? youWS.name : '',             // the participant's own desk
     condition: req.method,
     caller: desks.find(d=>d.id===req.callerId).name,
@@ -724,10 +738,11 @@ document.getElementById('surveyToggle').addEventListener('click',e=>{
 
 // --- study mode (within-subjects, counterbalanced) -----------------------
 document.getElementById('startSessionBtn').addEventListener('click',()=>{
-  // single entry point: open the guided welcome (which asks for the ID and runs the guided experiment)
-  document.getElementById('welcomeId').value='';
+  // single entry point: open the guided welcome (which asks for name/ID and runs the guided experiment)
+  document.getElementById('welcomeName').value=''; document.getElementById('welcomeSid').value='';
+  resetWelcomeHint();
   document.getElementById('welcomeModal').classList.add('show');
-  setTimeout(()=>document.getElementById('welcomeId').focus(),60);
+  setTimeout(()=>document.getElementById('welcomeName').focus(),60);
 });
 function runStudyStep(){
   if(!study) return;
@@ -779,12 +794,19 @@ function guidedStep(){
   }
   showGuide('<span style="font-size:12px;opacity:.8;text-transform:uppercase;letter-spacing:.05em">Scenario '+(study.i+1)+' of '+study.seq.length+'</span><br>'+what+'<br><span style="font-weight:600">'+instr+'</span>');
 }
-document.getElementById('welcomeBegin').addEventListener('click',()=>{
-  const pid=document.getElementById('welcomeId').value.trim();
-  if(!pid){ document.getElementById('welcomeId').focus(); return; }
+function resetWelcomeHint(){ const h=document.getElementById('welcomeHint'); if(h){ h.style.color='#93a0bd'; h.textContent='Fill in at least one — name or student ID. · 至少填一个即可。'; } }
+function beginGuided(){
+  const nm=document.getElementById('welcomeName').value.trim();
+  const sid=document.getElementById('welcomeSid').value.trim();
+  if(!nm && !sid){ const h=document.getElementById('welcomeHint'); h.style.color='#ff8a8a';
+    h.textContent='Please fill in at least one — your name or student ID. · 请至少填写姓名或学号其一。';
+    document.getElementById('welcomeName').focus(); return; }
+  participantName=nm; participantSid=sid;
   document.getElementById('welcomeModal').classList.remove('show');
-  startGuidedStudy(pid);
-});
+  startGuidedStudy(sid || nm);   // primary key prefers student ID, falls back to name
+}
+document.getElementById('welcomeBegin').addEventListener('click',beginGuided);
+['welcomeName','welcomeSid'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') beginGuided(); }));
 document.getElementById('welcomeSkip').addEventListener('click',()=>{
   document.body.classList.remove('pmode');
   document.getElementById('welcomeModal').classList.remove('show');
@@ -822,8 +844,9 @@ function refresh(){
 }
 document.getElementById('csvBtn').addEventListener('click',()=>{
   if(!trials.length){ toast('No data yet'); return; }
-  const head=['participant_id','trial','step','seat','condition','is_multiuser','caller','target_desk','localization_ok','time_to_arrival_s','ui_actions','queue_wait_s','trust_1to5','confidence_1to5','effort_1to5','fairness_1to5','timestamp'];
-  const rows=trials.map(r=>[r.participant||'anon',r.n,r.step??'',r.seat||'',r.condition,r.fair?1:0,r.caller,r.target||'',
+  const csvSafe=v=>{ v=(v==null?'':String(v)); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const head=['participant_id','participant_name','student_id','trial','step','seat','condition','is_multiuser','caller','target_desk','localization_ok','time_to_arrival_s','ui_actions','queue_wait_s','trust_1to5','confidence_1to5','effort_1to5','fairness_1to5','timestamp'];
+  const rows=trials.map(r=>[csvSafe(r.participant||'anon'),csvSafe(r.name),csvSafe(r.sid),r.n,r.step??'',r.seat||'',r.condition,r.fair?1:0,r.caller,r.target||'',
     r.sslCorrect===null?'':r.sslCorrect?1:0, r.arrival.toFixed(2), r.actions, r.wait.toFixed(2),
     r.trust??'', r.confidence??'', r.effort??'', r.fairness??'', r.at||'']);
   const csv=[head,...rows].map(a=>a.join(',')).join('\n');
@@ -887,7 +910,7 @@ function resetRobot(){ robot.queue.length=0; robot.serving=null; robot.state='id
 // --- boot ----------------------------------------------------------------
 window.addEventListener('resize',fitDPR);
 fitDPR(); setCondition('visual'); rebuildAppLoc(); refresh(); requestAnimationFrame(loop);
-if(new URLSearchParams(location.search).has('study')) document.getElementById('welcomeModal').classList.add('show');
+if(new URLSearchParams(location.search).has('study')){ document.getElementById('welcomeModal').classList.add('show'); setTimeout(()=>document.getElementById('welcomeName').focus(),80); }
 </script>
 </body>
 </html>

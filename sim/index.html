@@ -200,13 +200,18 @@
     <h3>Quick rating</h3>
     <p id="surveyCtx">How did that summon feel?</p>
     <p style="margin:-6px 0 14px;color:#93a0bd;font-size:12px">The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.</p>
-    <div class="q">
-      <div class="qt">"I could tell whether the robot understood me and where it was heading." (calibrated trust)</div>
+    <div class="q" style="border-left:3px solid #46e0c8;padding-left:12px">
+      <div class="qt"><span style="color:#46e0c8;font-weight:700">★ Main · </span>"I could tell whether the robot understood me and where it was going." (calibrated trust)</div>
       <div class="likert" id="qTrust"></div>
       <div class="lab"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
     </div>
     <div class="q">
-      <div class="qt">"Mentally, how demanding was summoning the robot?" (NASA-TLX, single item)</div>
+      <div class="qt">"I trusted it to come to the right desk." (confidence)</div>
+      <div class="likert" id="qConf"></div>
+      <div class="lab"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
+    </div>
+    <div class="q">
+      <div class="qt">"Mentally, how demanding was this summon?" (NASA-TLX, single item)</div>
       <div class="likert" id="qEffort"></div>
       <div class="lab"><span>1 · very low</span><span>5 · very high</span></div>
     </div>
@@ -469,7 +474,7 @@ function completeTrial(req){
     sslCorrect: req.method==='app'? null : req.sslCorrect,
     wait: req.waited,
     fair: fair,
-    trust: null, effort: null, fairness: null
+    trust: null, confidence: null, effort: null, fairness: null
   };
   trials.push(rec);
   if(surveysOn){ pending = rec; openSurvey(rec); }
@@ -700,14 +705,14 @@ document.getElementById('ambientBtn').addEventListener('click',e=>{
 });
 
 // --- survey --------------------------------------------------------------
-let sv={trust:null,effort:null,fairness:null};
-function surveyReady(){ return sv.trust && sv.effort && (!(pending&&pending.fair) || sv.fairness); }
+let sv={trust:null,confidence:null,effort:null,fairness:null};
+function surveyReady(){ return sv.trust && sv.confidence && sv.effort && (!(pending&&pending.fair) || sv.fairness); }
 function buildLikert(elId,key){ const el=document.getElementById(elId); el.innerHTML='';
   for(let i=1;i<=5;i++){ const b=document.createElement('button'); b.textContent=i;
     b.onclick=()=>{ sv[key]=i; [...el.children].forEach(c=>c.classList.toggle('on',c===b));
       document.getElementById('surveyDone').disabled=!surveyReady(); }; el.appendChild(b);} }
-buildLikert('qTrust','trust'); buildLikert('qEffort','effort'); buildLikert('qFair','fairness');
-function openSurvey(rec){ sv={trust:null,effort:null,fairness:null};
+buildLikert('qTrust','trust'); buildLikert('qConf','confidence'); buildLikert('qEffort','effort'); buildLikert('qFair','fairness');
+function openSurvey(rec){ sv={trust:null,confidence:null,effort:null,fairness:null};
   document.querySelectorAll('.likert button').forEach(b=>b.classList.remove('on'));
   document.getElementById('qFairWrap').style.display = rec.fair ? 'block' : 'none';
   document.getElementById('surveyDone').disabled=true;
@@ -722,7 +727,7 @@ function closeSurvey(){ document.getElementById('modal').classList.remove('show'
     if(study.i<study.seq.length) setTimeout(runStudyStep,500);
     else { study=null; toast('Experiment complete ✓'); } } }
 document.getElementById('surveyDone').addEventListener('click',()=>{
-  if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; pending.fairness=sv.fairness; refresh(); postTrial(pending); } closeSurvey(); });
+  if(pending){ pending.trust=sv.trust; pending.confidence=sv.confidence; pending.effort=sv.effort; pending.fairness=sv.fairness; refresh(); postTrial(pending); } closeSurvey(); });
 document.getElementById('surveySkip').addEventListener('click',()=>{ if(pending) postTrial(pending); closeSurvey(); });
 document.getElementById('surveyToggle').addEventListener('click',e=>{
   surveysOn=!surveysOn; e.target.textContent='Ratings: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
@@ -828,9 +833,9 @@ function refresh(){
 }
 document.getElementById('csvBtn').addEventListener('click',()=>{
   if(!trials.length){ toast('No data yet'); return; }
-  const head=['participant_id','trial','condition','caller','target_desk','time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','effort_1to5','fairness_1to5'];
+  const head=['participant_id','trial','condition','caller','target_desk','time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','confidence_1to5','effort_1to5','fairness_1to5'];
   const rows=trials.map(r=>[r.participant||'anon',r.n,r.condition,r.caller,r.target||'',r.arrival.toFixed(2),r.actions,
-    r.sslCorrect===null?'':r.sslCorrect?1:0, r.wait.toFixed(2), r.trust??'', r.effort??'', r.fairness??'']);
+    r.sslCorrect===null?'':r.sslCorrect?1:0, r.wait.toFixed(2), r.trust??'', r.confidence??'', r.effort??'', r.fairness??'']);
   const csv=[head,...rows].map(a=>a.join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='heyoverhere_study_data.csv'; a.click();

@@ -26,7 +26,7 @@ function doPost(e) {
     var sheet = ss.getSheetByName('data') || ss.insertSheet('data');
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(['participant_id','trial','condition','caller','target_desk',
-        'time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','effort_1to5','fairness_1to5','submitted_at']);
+        'time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','confidence_1to5','effort_1to5','fairness_1to5','submitted_at']);
     }
     var d = JSON.parse(e.postData.contents);
     var rows = d.trials || (d.trial ? [d.trial] : []);
@@ -38,6 +38,7 @@ function doPost(e) {
         (t.sslCorrect === null || t.sslCorrect === undefined) ? '' : (t.sslCorrect ? 1 : 0),
         t.wait,
         (t.trust === null || t.trust === undefined) ? '' : t.trust,
+        (t.confidence === null || t.confidence === undefined) ? '' : t.confidence,
         (t.effort === null || t.effort === undefined) ? '' : t.effort,
         (t.fairness === null || t.fairness === undefined) ? '' : t.fairness,
         ts

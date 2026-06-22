@@ -379,7 +379,7 @@ function update(dt){
   if(ambient){ ambientT-=dt; if(ambientT<=0){ ambientT = 4+Math.random()*4;
     const pool = desks.filter(d=>!youWS||d.id!==youWS.id);
     const d = pool[(Math.random()*pool.length)|0];
-    summon(d.id, Math.random()<0.5?'voice':'visual', 1);
+    summon(d.id, 'visual', 1);
   }}
 
   // pick up next queued request when free
@@ -481,7 +481,7 @@ function render(t){
     const isTarget = robot.serving && robot.serving.targetId===d.id;
     const isYou = youWS && youWS.id===d.id;
     ctx.save(); ctx.translate(d.x,d.y);
-    if(isTarget){ ctx.beginPath(); ctx.arc(0,0,46,0,7); ctx.fillStyle='rgba(70,224,200,.18)'; ctx.fill(); }
+    if(isTarget && robot.serving.method==='visual'){ ctx.beginPath(); ctx.arc(0,0,46,0,7); ctx.fillStyle='rgba(70,224,200,.18)'; ctx.fill(); }
     // desk
     roundRect(-42,-26,84,40,8); ctx.fillStyle='#cfd8e6'; ctx.fill();
     roundRect(-42,-26,84,40,8); ctx.strokeStyle= isYou?'#27b89e':'#aab6c8'; ctx.lineWidth=isYou?3:1.5; ctx.stroke();
@@ -498,31 +498,31 @@ function render(t){
     // calling badge w/ ack + ETA
     if(calling){
       const q = robot.queue.find(x=>x.callerId===d.id);
-      const isServed = robot.serving===q;
-      const idx = robot.queue.indexOf(q);
-      const pulse = 0.5+0.5*Math.sin(robot.ledPhase*1.5);
-      ctx.beginPath(); ctx.arc(34,-26,8+pulse*2,0,7); ctx.fillStyle='rgba(255,107,107,.9)'; ctx.fill();
-      ctx.fillStyle='#fff'; ctx.font='bold 9px sans-serif'; ctx.fillText('!',34,-23);
-      let msg;
-      if(!q.acked) msg='calling…';
-      else if(isServed){
-        if(robot.state==='moving') msg='ETA '+robot.etaLeft.toFixed(0)+'s'+(!q.sslCorrect&&q.method!=='app'?' · SSL?':'');
-        else if(robot.state==='listening'||robot.state==='thinking') msg='heard you…';
-        else msg='arriving';
-      } else msg='queued #'+idx;
-      ctx.fillStyle='#b23b3b'; ctx.font='10px sans-serif'; ctx.fillText(msg, 0, 62);
+      if(q.method==='visual'){   // on-screen cues only in the visual-feedback condition; app & voice-only show none
+        const isServed = robot.serving===q;
+        const idx = robot.queue.indexOf(q);
+        const pulse = 0.5+0.5*Math.sin(robot.ledPhase*1.5);
+        ctx.beginPath(); ctx.arc(34,-26,8+pulse*2,0,7); ctx.fillStyle='rgba(255,107,107,.9)'; ctx.fill();
+        ctx.fillStyle='#fff'; ctx.font='bold 9px sans-serif'; ctx.fillText('!',34,-23);
+        let msg;
+        if(!q.acked) msg='calling…';
+        else if(isServed){
+          if(robot.state==='moving') msg='ETA '+robot.etaLeft.toFixed(0)+'s'+(!q.sslCorrect?' · SSL?':'');
+          else if(robot.state==='listening'||robot.state==='thinking') msg='heard you…';
+          else msg='arriving';
+        } else msg='queued #'+idx;
+        ctx.fillStyle='#b23b3b'; ctx.font='10px sans-serif'; ctx.fillText(msg, 0, 62);
+      }
     }
     ctx.restore();
   }
 
-  // SSL beam (thinking/moving, visual condition only)
-  if(condition!=='voice' && (robot.state==='thinking'||robot.state==='moving') && robot.sslBearing!=null && condition==='visual'){
+  // SSL beam — visual-feedback condition only (gated by the served summon's method)
+  if(robot.serving && robot.serving.method==='visual' && (robot.state==='thinking'||robot.state==='moving') && robot.sslBearing!=null){
     drawBeam(robot.sslBearing);
-  } else if(condition!=='visual' && robot.serving && (robot.state==='thinking') && condition==='voice'){
-    /* voice-only: no visual feedback shown to user */
   }
-  // path line (visual)
-  if(condition==='visual' && robot.state==='moving' && robot.target){
+  // path line — visual-feedback condition only
+  if(robot.serving && robot.serving.method==='visual' && robot.state==='moving' && robot.target){
     ctx.beginPath(); ctx.moveTo(robot.x,robot.y); ctx.lineTo(robot.target.x,robot.target.y);
     ctx.strokeStyle='rgba(70,224,200,.5)'; ctx.lineWidth=2; ctx.setLineDash([6,7]); ctx.stroke(); ctx.setLineDash([]);
   }
@@ -551,8 +551,8 @@ function drawRobot(t){
   else if(r.state==='moving') col='#54e08a';
   else if(r.state==='serving') col='#54e08a';
   else if(r.state==='idle'||r.state==='returning') col='#3a7d72';
-  // only show rich LED feedback when condition === visual (calibrated-trust manipulation)
-  const showLED = condition==='visual' || r.state==='idle' || r.state==='returning';
+  // rich LED feedback only when the served summon is the visual-feedback condition
+  const showLED = (robot.serving && robot.serving.method==='visual') || r.state==='idle' || r.state==='returning';
   const ringPulse = 1+0.10*Math.sin(r.ledPhase);
   ctx.beginPath(); ctx.arc(0,0,19*(showLED?ringPulse:1),0,7);
   ctx.fillStyle = showLED? col : '#6b7686'; ctx.globalAlpha= showLED?0.95:0.6; ctx.fill(); ctx.globalAlpha=1;
@@ -667,7 +667,7 @@ function updAppActions(){ document.getElementById('appActions').textContent='UI 
 document.getElementById('injectBtn').addEventListener('click',()=>{
   const pool=desks.filter(d=>!youWS||d.id!==youWS.id);
   for(let i=0;i<2;i++){ const d=pool[(Math.random()*pool.length)|0];
-    summon(d.id, Math.random()<0.5?'voice':'visual',1); }
+    summon(d.id, 'visual', 1); }   // fairness cues (ack/queue/ETA) are visual — show them so the probe demonstrates mediation
 });
 document.getElementById('ambientBtn').addEventListener('click',e=>{
   ambient=!ambient; ambientT=2; e.target.textContent='Ambient traffic: '+(ambient?'on':'off');

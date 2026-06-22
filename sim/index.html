@@ -243,7 +243,7 @@
 <div class="modal" id="welcomeModal">
   <div class="card" style="width:510px;max-width:94vw">
     <h3>Help test a voice-summoned office robot 🤖</h3>
-    <p>You'll call a small cleaning robot to your desk a few times — sometimes through a phone app, sometimes just by saying <b>“over here”</b> — and rate how each felt. About <b>3 minutes</b>.</p>
+    <p>Imagine you’re at your desk in a shared office and there’s a bit of rubbish to clear. You’ll call a small cleaning robot over a few times — sometimes through a phone app, sometimes just by saying <b>“over here”</b> — and after each one, rate how it felt. Each screen sets the scene for you; there are <b>no right or wrong answers</b>, just go with your gut. About <b>3 minutes</b>.</p>
     <div style="margin:14px 0 4px">
       <div class="qt" style="font-size:13px;margin-bottom:7px">Your name or ID</div>
       <input id="welcomeId" placeholder="e.g. Alex / P01" autocomplete="off"
@@ -260,12 +260,11 @@
 <div class="modal" id="doneModal">
   <div class="card" style="width:480px;max-width:94vw">
     <h3>✓ All done — thank you! 🎉</h3>
-    <p>That’s the whole study. Your responses are saved on this page.</p>
-    <div class="row" style="margin-top:6px">
-      <button class="act primary" id="doneDownload">⬇ Download my responses</button>
-      <button class="act" id="doneClose">Close</button>
+    <p>That’s the whole study — your answers are saved.</p>
+    <p style="color:#93a0bd;font-size:13px;margin-top:10px">Please hand the laptop back to the researcher (Li Ya). Thanks for taking part!</p>
+    <div class="row" style="margin-top:14px">
+      <button class="act primary" id="doneClose">Done</button>
     </div>
-    <p style="color:#93a0bd;font-size:12px;margin-top:14px">Please send the downloaded file to the researcher (Li Ya). Thank you for taking part!</p>
   </div>
 </div>
 
@@ -307,19 +306,7 @@ let youWS = null;
 let participantId = '';
 let ambient = false, ambientT = 0;
 let surveysOn = true;
-const trials = [];
-// ─── Remote data collection ──────────────────────────────────────────────
-// Paste your deployed Google Apps Script web-app URL (…/exec) here to auto-upload
-// each rated trial to your Google Sheet. Leave '' to keep data local only.
-const DATA_ENDPOINT = '';
-function postTrial(rec){
-  if(!DATA_ENDPOINT || !rec) return;
-  try{
-    fetch(DATA_ENDPOINT, { method:'POST', mode:'no-cors',
-      body: JSON.stringify({ participant: rec.participant, submittedAt: new Date().toISOString(), trial: rec }) })
-      .catch(()=>{});   // fire-and-forget: never block the participant; local CSV is the backup
-  }catch(e){}
-}
+const trials = [];   // accumulates across every participant on this machine → one combined CSV at the end
 let pending = null;          // trial currently being measured/awaiting survey
 let study = null;            // {seq:[], i:0}
 
@@ -465,7 +452,9 @@ function completeTrial(req){
   const fair = !!(study && study.fair);
   const rec = {
     n: trials.length+1,
+    step: study ? study.i+1 : '',              // order within this participant's guided session (1–6)
     participant: participantId || 'anon',
+    seat: youWS ? youWS.name : '',             // the participant's own desk
     condition: req.method,
     caller: desks.find(d=>d.id===req.callerId).name,
     target: desks.find(d=>d.id===req.targetId).name,
@@ -474,6 +463,7 @@ function completeTrial(req){
     sslCorrect: req.method==='app'? null : req.sslCorrect,
     wait: req.waited,
     fair: fair,
+    at: new Date().toISOString(),              // timestamp this trial completed
     trust: null, confidence: null, effort: null, fairness: null
   };
   trials.push(rec);
@@ -727,8 +717,8 @@ function closeSurvey(){ document.getElementById('modal').classList.remove('show'
     if(study.i<study.seq.length) setTimeout(runStudyStep,500);
     else { study=null; toast('Experiment complete ✓'); } } }
 document.getElementById('surveyDone').addEventListener('click',()=>{
-  if(pending){ pending.trust=sv.trust; pending.confidence=sv.confidence; pending.effort=sv.effort; pending.fairness=sv.fairness; refresh(); postTrial(pending); } closeSurvey(); });
-document.getElementById('surveySkip').addEventListener('click',()=>{ if(pending) postTrial(pending); closeSurvey(); });
+  if(pending){ pending.trust=sv.trust; pending.confidence=sv.confidence; pending.effort=sv.effort; pending.fairness=sv.fairness; refresh(); } closeSurvey(); });
+document.getElementById('surveySkip').addEventListener('click',closeSurvey);
 document.getElementById('surveyToggle').addEventListener('click',e=>{
   surveysOn=!surveysOn; e.target.textContent='Ratings: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
 
@@ -775,19 +765,19 @@ function guidedStep(){
   const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.awaiting=true; study.fair=!!item.fair;
   let what, instr;
   if(item.fair){
-    what='Two people at once — you and a colleague summon together.';
-    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”, then watch how the robot handles <b>both</b> of you (who it serves, and what the other desk sees).';
+    what='<b>Rush hour.</b> You and a colleague across the room both have rubbish and call the robot at the <b>same moment</b>.';
+    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here” — then watch how it decides who to serve, and what the other person is shown.';
   } else if(item.cond==='app'){
-    what='Summon through the phone app — no voice.';
-    instr='📱 Open the app (bottom-right): tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.';
+    what='<b>There’s a snack wrapper on your desk.</b> To get the cleaning robot over, you use its phone app.';
+    instr='📱 Open the BinBot app (bottom-right): tap <b>Menu</b> → find <b>your</b> desk in the list → <b>Summon</b>.';
   } else if(item.cond==='voice'){
-    what='Summon by voice — the robot gives <b>no on-screen feedback</b> this time.';
-    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”, then watch where it ends up.';
+    what='<b>Your hands are full</b>, so instead of the app you just call out and let the robot find your desk by sound. It shows <b>no lights or screen</b> — you just wait and see.';
+    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”.';
   } else {
-    what='Summon by voice — this time the robot <b>shows what it heard</b>.';
-    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”; watch its light, the beam, and the ETA.';
+    what='<b>You call out again</b> — but this robot <b>lights up and points</b> as it goes, showing what it heard and where it’s heading.';
+    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”, and keep an eye on the robot.';
   }
-  showGuide('Step '+(study.i+1)+' of '+study.seq.length+' · '+what+'<br>'+instr);
+  showGuide('<span style="font-size:12px;opacity:.8;text-transform:uppercase;letter-spacing:.05em">Scenario '+(study.i+1)+' of '+study.seq.length+'</span><br>'+what+'<br><span style="font-weight:600">'+instr+'</span>');
 }
 document.getElementById('welcomeBegin').addEventListener('click',()=>{
   const pid=document.getElementById('welcomeId').value.trim();
@@ -799,7 +789,6 @@ document.getElementById('welcomeSkip').addEventListener('click',()=>{
   document.body.classList.remove('pmode');
   document.getElementById('welcomeModal').classList.remove('show');
 });
-document.getElementById('doneDownload').addEventListener('click',()=>document.getElementById('csvBtn').click());
 document.getElementById('doneClose').addEventListener('click',()=>document.getElementById('doneModal').classList.remove('show'));
 
 // --- panels / stats ------------------------------------------------------
@@ -833,9 +822,10 @@ function refresh(){
 }
 document.getElementById('csvBtn').addEventListener('click',()=>{
   if(!trials.length){ toast('No data yet'); return; }
-  const head=['participant_id','trial','condition','caller','target_desk','time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','confidence_1to5','effort_1to5','fairness_1to5'];
-  const rows=trials.map(r=>[r.participant||'anon',r.n,r.condition,r.caller,r.target||'',r.arrival.toFixed(2),r.actions,
-    r.sslCorrect===null?'':r.sslCorrect?1:0, r.wait.toFixed(2), r.trust??'', r.confidence??'', r.effort??'', r.fairness??'']);
+  const head=['participant_id','trial','step','seat','condition','is_multiuser','caller','target_desk','localization_ok','time_to_arrival_s','ui_actions','queue_wait_s','trust_1to5','confidence_1to5','effort_1to5','fairness_1to5','timestamp'];
+  const rows=trials.map(r=>[r.participant||'anon',r.n,r.step??'',r.seat||'',r.condition,r.fair?1:0,r.caller,r.target||'',
+    r.sslCorrect===null?'':r.sslCorrect?1:0, r.arrival.toFixed(2), r.actions, r.wait.toFixed(2),
+    r.trust??'', r.confidence??'', r.effort??'', r.fairness??'', r.at||'']);
   const csv=[head,...rows].map(a=>a.join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='heyoverhere_study_data.csv'; a.click();

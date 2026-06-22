@@ -160,16 +160,16 @@
       </div>
 
       <div class="sec">
-        <h2>Study session</h2>
+        <h2>The experiment (collect data)</h2>
         <div class="row" style="margin-bottom:8px">
           <input id="pid" placeholder="Participant ID (e.g. P01)" autocomplete="off"
             style="flex:1;min-width:0;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:9px 12px;font-size:13px" />
         </div>
         <div class="row">
-          <button class="act primary" id="studyBtn">▶ Run study block</button>
-          <button class="act" id="surveyToggle">Surveys: on</button>
+          <button class="act primary" id="studyBtn">▶ Run the experiment</button>
+          <button class="act" id="surveyToggle">Ratings: on</button>
         </div>
-        <div class="desc" style="margin-top:7px">Enter an ID, then run: 6 trials — App×2, plus Voice and Voice+visual each with one <b>correct</b> and one <b>mislocalized</b> summon. Data is tagged per participant; export one CSV at the end.</div>
+        <div class="desc" style="margin-top:7px">The real study for <b>one person</b>: type their ID → they do <b>6 guided summons</b> (app, voice, voice+visual — including times the robot goes to the <b>wrong</b> desk) → rate each. This is what produces your data. <i>Summoning on your own above is just free practice, not the study.</i></div>
         <div class="kv" style="margin-top:8px"><span>Trials logged</span><b id="nTrials">0</b></div>
         <div class="kv"><span>Mean time-to-arrival</span><b id="mTime">—</b></div>
         <div class="kv"><span>SSL accuracy (voice)</span><b id="mSSL">—</b></div>
@@ -200,8 +200,9 @@
   <div class="card">
     <h3>Quick rating</h3>
     <p id="surveyCtx">How did that summon feel?</p>
+    <p style="margin:-6px 0 14px;color:#93a0bd;font-size:12px">The same two questions are asked after <b>every</b> summon, in all three modes — that’s what lets us compare them fairly.</p>
     <div class="q">
-      <div class="qt">"I knew what the robot heard and what it was about to do." (calibrated trust)</div>
+      <div class="qt">"I could tell whether the robot understood me and where it was heading." (calibrated trust)</div>
       <div class="likert" id="qTrust"></div>
       <div class="lab"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
     </div>
@@ -456,7 +457,7 @@ function completeTrial(req){
   refresh();
   // study sequencing
   if(study){ study.i++; if(study.i<study.seq.length){ if(!surveysOn) setTimeout(runStudyStep,700);}
-             else if(!surveysOn){ study=null; toast('Study block complete ✓'); } }
+             else if(!surveysOn){ study=null; toast('Experiment complete ✓'); } }
 }
 
 // --- rendering -----------------------------------------------------------
@@ -696,12 +697,12 @@ function closeSurvey(){ document.getElementById('modal').classList.remove('show'
   if(study){
     if(study.guided){ setTimeout(guidedStep,450); return; }
     if(study.i<study.seq.length) setTimeout(runStudyStep,500);
-    else { study=null; toast('Study block complete ✓'); } } }
+    else { study=null; toast('Experiment complete ✓'); } } }
 document.getElementById('surveyDone').addEventListener('click',()=>{
   if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; refresh(); } closeSurvey(); });
 document.getElementById('surveySkip').addEventListener('click',closeSurvey);
 document.getElementById('surveyToggle').addEventListener('click',e=>{
-  surveysOn=!surveysOn; e.target.textContent='Surveys: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
+  surveysOn=!surveysOn; e.target.textContent='Ratings: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
 
 // --- study mode (within-subjects, counterbalanced) -----------------------
 document.getElementById('studyBtn').addEventListener('click',()=>{
@@ -714,11 +715,11 @@ document.getElementById('studyBtn').addEventListener('click',()=>{
     {cond:'voice',ssl:'correct'},{cond:'voice',ssl:'error'},
     {cond:'visual',ssl:'correct'},{cond:'visual',ssl:'error'} ];
   for(let i=seq.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [seq[i],seq[j]]=[seq[j],seq[i]]; }
-  study={seq,i:0,curSsl:null}; toast(pid+' · study block: '+seq.length+' trials'); runStudyStep();
+  study={seq,i:0,curSsl:null}; toast(pid+' · experiment started ('+seq.length+' summons)'); runStudyStep();
 });
 function runStudyStep(){
   if(!study) return;
-  if(study.i>=study.seq.length){ study=null; toast('Study block complete ✓ — change ID for the next person, or Export CSV'); return; }
+  if(study.i>=study.seq.length){ study=null; toast('Experiment complete ✓ — change ID for the next person, or Export CSV'); return; }
   const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null;
   toast('Trial '+(study.i+1)+'/'+study.seq.length+' — '+item.cond+(item.ssl?(' ['+item.ssl+']'):'')+(item.cond==='app'?' (use the phone)':' (press Space / hold mic)'));
   if(item.cond!=='app'){ // auto-fire voice/visual after a beat so the block flows

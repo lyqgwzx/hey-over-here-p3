@@ -177,7 +177,7 @@
       <div class="sec">
         <h2>Collected data</h2>
         <div class="tblwrap"><table id="logTbl"><thead><tr>
-          <th>#</th><th>cond</th><th>caller</th><th>arr(s)</th><th>acts</th><th>SSL</th><th>wait(s)</th><th>trust</th><th>effort</th>
+          <th>#</th><th>who</th><th>cond</th><th>caller</th><th>arr(s)</th><th>acts</th><th>SSL</th><th>wait(s)</th><th>trust</th><th>effort</th>
         </tr></thead><tbody></tbody></table></div>
         <div class="row" style="margin-top:9px">
           <button class="act primary" id="resultsBtn">📊 Results</button>
@@ -271,6 +271,7 @@
   <div class="card" style="width:480px;max-width:94vw">
     <h3>✓ All done — thank you! 🎉</h3>
     <p>That’s the whole study — your answers are saved.</p>
+    <p id="doneWho" style="color:#8fe3c8;font-size:13px;margin-top:8px"></p>
     <p style="color:#93a0bd;font-size:13px;margin-top:10px">Please hand the laptop back to the researcher (Li Ya). Thanks for taking part!</p>
     <div class="row" style="margin-top:14px">
       <button class="act primary" id="doneClose">Done</button>
@@ -776,6 +777,7 @@ function startGuidedStudy(pid){
 function guidedStep(){
   if(!study||!study.guided) return;
   if(study.i>=study.seq.length){ hideGuide(); study=null; resetRobot(); document.body.classList.remove('pmode');
+    document.getElementById('doneWho').textContent='Recorded as: '+whoLabel(participantName,participantSid);
     document.getElementById('doneModal').classList.add('show'); return; }
   const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.awaiting=true; study.fair=!!item.fair;
   let what, instr;
@@ -821,13 +823,15 @@ function refreshLive(){
   document.getElementById('stSSL').textContent= robot.serving && robot.serving.method!=='app'
      ? (robot.serving.sslCorrect?'correct':'→ '+desks.find(d=>d.id===robot.serving.targetId).name+' (off)') : '—';
 }
+function whoLabel(name,sid){ return (name&&sid) ? name+' · '+sid : (name||sid||'anon'); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function refresh(){
   // table
   const tb=document.querySelector('#logTbl tbody'); tb.innerHTML='';
   for(const r of trials){
     const tr=document.createElement('tr');
     const ssl = r.sslCorrect===null?'<span class="badge">n/a</span>':(r.sslCorrect?'<span class="ok">✓</span>':'<span class="no">✗</span>');
-    tr.innerHTML=`<td>${r.n}</td><td><span class="tag ${r.condition}">${r.condition}</span></td>
+    tr.innerHTML=`<td>${r.n}</td><td>${esc(whoLabel(r.name,r.sid))}</td><td><span class="tag ${r.condition}">${r.condition}</span></td>
       <td>${r.caller}</td><td>${r.arrival.toFixed(1)}</td><td>${r.actions}</td>
       <td>${ssl}</td><td>${r.wait.toFixed(1)}</td><td>${r.trust??'—'}</td><td>${r.effort??'—'}</td>`;
     tb.appendChild(tr);

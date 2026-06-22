@@ -298,6 +298,18 @@ let participantId = '';
 let ambient = false, ambientT = 0;
 let surveysOn = true;
 const trials = [];
+// ─── Remote data collection ──────────────────────────────────────────────
+// Paste your deployed Google Apps Script web-app URL (…/exec) here to auto-upload
+// each rated trial to your Google Sheet. Leave '' to keep data local only.
+const DATA_ENDPOINT = '';
+function postTrial(rec){
+  if(!DATA_ENDPOINT || !rec) return;
+  try{
+    fetch(DATA_ENDPOINT, { method:'POST', mode:'no-cors',
+      body: JSON.stringify({ participant: rec.participant, submittedAt: new Date().toISOString(), trial: rec }) })
+      .catch(()=>{});   // fire-and-forget: never block the participant; local CSV is the backup
+  }catch(e){}
+}
 let pending = null;          // trial currently being measured/awaiting survey
 let study = null;            // {seq:[], i:0}
 
@@ -698,8 +710,8 @@ function closeSurvey(){ document.getElementById('modal').classList.remove('show'
     if(study.i<study.seq.length) setTimeout(runStudyStep,500);
     else { study=null; toast('Experiment complete ✓'); } } }
 document.getElementById('surveyDone').addEventListener('click',()=>{
-  if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; refresh(); } closeSurvey(); });
-document.getElementById('surveySkip').addEventListener('click',closeSurvey);
+  if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; refresh(); postTrial(pending); } closeSurvey(); });
+document.getElementById('surveySkip').addEventListener('click',()=>{ if(pending) postTrial(pending); closeSurvey(); });
 document.getElementById('surveyToggle').addEventListener('click',e=>{
   surveysOn=!surveysOn; e.target.textContent='Ratings: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
 

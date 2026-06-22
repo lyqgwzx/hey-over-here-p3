@@ -199,7 +199,7 @@
   <div class="card">
     <h3>Quick rating</h3>
     <p id="surveyCtx">How did that summon feel?</p>
-    <p style="margin:-6px 0 14px;color:#93a0bd;font-size:12px">The same two questions are asked after <b>every</b> summon, in all three modes — that’s what lets us compare them fairly.</p>
+    <p style="margin:-6px 0 14px;color:#93a0bd;font-size:12px">The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.</p>
     <div class="q">
       <div class="qt">"I could tell whether the robot understood me and where it was heading." (calibrated trust)</div>
       <div class="likert" id="qTrust"></div>
@@ -209,6 +209,11 @@
       <div class="qt">"Mentally, how demanding was summoning the robot?" (NASA-TLX, single item)</div>
       <div class="likert" id="qEffort"></div>
       <div class="lab"><span>1 · very low</span><span>5 · very high</span></div>
+    </div>
+    <div class="q" id="qFairWrap" style="display:none">
+      <div class="qt">"The robot handled both people fairly — it acknowledged me, queued us, and gave an ETA." (multi-user fairness)</div>
+      <div class="likert" id="qFair"></div>
+      <div class="lab"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
     </div>
     <div class="row" style="margin-top:18px">
       <button class="act primary" id="surveyDone" disabled>Submit rating</button>
@@ -351,17 +356,17 @@ function runSSL(callerId, sslMode){
 }
 
 // --- summon pipeline -----------------------------------------------------
-function makeRequest(callerId, method, uiActions, sslMode){
+function makeRequest(callerId, method, uiActions, sslMode, ghost){
   const ssl = (method==='app') ? {picked:desks.find(d=>d.id===callerId),correct:true,estBearing:null}
                                : runSSL(callerId, sslMode);
   return {
-    callerId, method, uiActions,
+    callerId, method, uiActions, ghost: !!ghost,
     targetId: ssl.picked.id, sslCorrect: ssl.correct, estBearing: ssl.estBearing,
     tIntent: now(), tArrive: null, tQueued: now(), waited: 0, acked:false
   };
 }
-function summon(callerId, method, uiActions, sslMode){
-  const req = makeRequest(callerId, method, uiActions, sslMode);
+function summon(callerId, method, uiActions, sslMode, ghost){
+  const req = makeRequest(callerId, method, uiActions, sslMode, ghost);
   robot.queue.push(req);
   const c = desks.find(d=>d.id===callerId);
   toast((method==='app'?'📱':'🗣️') + ' ' + c.name + ' summoned BinBot' +
@@ -451,6 +456,8 @@ function moveTo(tgt, dt){
 
 // --- trial completion / survey ------------------------------------------
 function completeTrial(req){
+  if(req.ghost) return;   // the injected colleague in the fairness scenario — not a logged trial
+  const fair = !!(study && study.fair);
   const rec = {
     n: trials.length+1,
     participant: participantId || 'anon',
@@ -461,7 +468,8 @@ function completeTrial(req){
     actions: req.uiActions,
     sslCorrect: req.method==='app'? null : req.sslCorrect,
     wait: req.waited,
-    trust: null, effort: null
+    fair: fair,
+    trust: null, effort: null, fairness: null
   };
   trials.push(rec);
   if(surveysOn){ pending = rec; openSurvey(rec); }
@@ -635,7 +643,9 @@ function doVoiceSummon(label){
   if(study && study.guided){
     if(!study.awaiting) return;        // one summon per guided step
     study.awaiting=false;
-    summon(youWS.id, condition, 1, study.curSsl); return;
+    summon(youWS.id, condition, 1, study.curSsl);
+    if(study.fair){ const o=desks.find(d=>d.id!==youWS.id); if(o) summon(o.id,'visual',1,'correct',true); }  // a colleague also calls (ghost = not logged)
+    return;
   }
   summon(youWS.id, condition, 1);
 }
@@ -690,17 +700,19 @@ document.getElementById('ambientBtn').addEventListener('click',e=>{
 });
 
 // --- survey --------------------------------------------------------------
-let sv={trust:null,effort:null};
+let sv={trust:null,effort:null,fairness:null};
+function surveyReady(){ return sv.trust && sv.effort && (!(pending&&pending.fair) || sv.fairness); }
 function buildLikert(elId,key){ const el=document.getElementById(elId); el.innerHTML='';
   for(let i=1;i<=5;i++){ const b=document.createElement('button'); b.textContent=i;
     b.onclick=()=>{ sv[key]=i; [...el.children].forEach(c=>c.classList.toggle('on',c===b));
-      document.getElementById('surveyDone').disabled=!(sv.trust&&sv.effort); }; el.appendChild(b);} }
-buildLikert('qTrust','trust'); buildLikert('qEffort','effort');
-function openSurvey(rec){ sv={trust:null,effort:null};
+      document.getElementById('surveyDone').disabled=!surveyReady(); }; el.appendChild(b);} }
+buildLikert('qTrust','trust'); buildLikert('qEffort','effort'); buildLikert('qFair','fairness');
+function openSurvey(rec){ sv={trust:null,effort:null,fairness:null};
   document.querySelectorAll('.likert button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('qFairWrap').style.display = rec.fair ? 'block' : 'none';
   document.getElementById('surveyDone').disabled=true;
   document.getElementById('surveyCtx').textContent =
-    'Condition: '+rec.condition+' · caller: '+rec.caller+' · arrived in '+rec.arrival.toFixed(1)+'s';
+    'Condition: '+rec.condition+(rec.fair?' · multi-user':'')+' · caller: '+rec.caller+' · arrived in '+rec.arrival.toFixed(1)+'s';
   document.getElementById('modal').classList.add('show');
 }
 function closeSurvey(){ document.getElementById('modal').classList.remove('show');
@@ -710,7 +722,7 @@ function closeSurvey(){ document.getElementById('modal').classList.remove('show'
     if(study.i<study.seq.length) setTimeout(runStudyStep,500);
     else { study=null; toast('Experiment complete ✓'); } } }
 document.getElementById('surveyDone').addEventListener('click',()=>{
-  if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; refresh(); postTrial(pending); } closeSurvey(); });
+  if(pending){ pending.trust=sv.trust; pending.effort=sv.effort; pending.fairness=sv.fairness; refresh(); postTrial(pending); } closeSurvey(); });
 document.getElementById('surveySkip').addEventListener('click',()=>{ if(pending) postTrial(pending); closeSurvey(); });
 document.getElementById('surveyToggle').addEventListener('click',e=>{
   surveysOn=!surveysOn; e.target.textContent='Ratings: '+(surveysOn?'on':'off'); e.target.classList.toggle('primary',!surveysOn); });
@@ -742,22 +754,35 @@ function startGuidedStudy(pid){
   youWS = desks.find(d=>d.id===GUIDE_DESK);
   document.getElementById('youWS').textContent = youWS.id+' · '+youWS.name;
   rebuildAppLoc(); surveysOn=true;
-  const seq=[ {cond:'app'},{cond:'app'},
+  // 5 single-summon trials (randomised) + a final multi-user fairness trial
+  const core=[ {cond:'app'},
     {cond:'voice',ssl:'correct'},{cond:'voice',ssl:'error'},
     {cond:'visual',ssl:'correct'},{cond:'visual',ssl:'error'} ];
-  for(let i=seq.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [seq[i],seq[j]]=[seq[j],seq[i]]; }
-  study={seq,i:0,curSsl:null,guided:true,awaiting:false};
+  for(let i=core.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [core[i],core[j]]=[core[j],core[i]]; }
+  const seq=[...core, {cond:'visual',ssl:'correct',fair:true}];
+  study={seq,i:0,curSsl:null,guided:true,awaiting:false,fair:false};
   guidedStep();
 }
 function guidedStep(){
   if(!study||!study.guided) return;
   if(study.i>=study.seq.length){ hideGuide(); study=null; resetRobot(); document.body.classList.remove('pmode');
     document.getElementById('doneModal').classList.add('show'); return; }
-  const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.awaiting=true;
-  const instr = item.cond==='app'
-    ? '📱 Open the app (bottom-right): tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.'
-    : '🎙 Hold the red “summon” button on the right (or press <b>Space</b>) and say “over here”.';
-  showGuide('Step '+(study.i+1)+' of '+study.seq.length+' — call the robot to your highlighted desk.<br>'+instr);
+  const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.awaiting=true; study.fair=!!item.fair;
+  let what, instr;
+  if(item.fair){
+    what='Two people at once — you and a colleague summon together.';
+    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”, then watch how the robot handles <b>both</b> of you (who it serves, and what the other desk sees).';
+  } else if(item.cond==='app'){
+    what='Summon through the phone app — no voice.';
+    instr='📱 Open the app (bottom-right): tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.';
+  } else if(item.cond==='voice'){
+    what='Summon by voice — the robot gives <b>no on-screen feedback</b> this time.';
+    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”, then watch where it ends up.';
+  } else {
+    what='Summon by voice — this time the robot <b>shows what it heard</b>.';
+    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”; watch its light, the beam, and the ETA.';
+  }
+  showGuide('Step '+(study.i+1)+' of '+study.seq.length+' · '+what+'<br>'+instr);
 }
 document.getElementById('welcomeBegin').addEventListener('click',()=>{
   const pid=document.getElementById('welcomeId').value.trim();
@@ -803,9 +828,9 @@ function refresh(){
 }
 document.getElementById('csvBtn').addEventListener('click',()=>{
   if(!trials.length){ toast('No data yet'); return; }
-  const head=['participant_id','trial','condition','caller','target_desk','time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','effort_1to5'];
+  const head=['participant_id','trial','condition','caller','target_desk','time_to_arrival_s','ui_actions','ssl_correct','queue_wait_s','trust_1to5','effort_1to5','fairness_1to5'];
   const rows=trials.map(r=>[r.participant||'anon',r.n,r.condition,r.caller,r.target||'',r.arrival.toFixed(2),r.actions,
-    r.sslCorrect===null?'':r.sslCorrect?1:0, r.wait.toFixed(2), r.trust??'', r.effort??'']);
+    r.sslCorrect===null?'':r.sslCorrect?1:0, r.wait.toFixed(2), r.trust??'', r.effort??'', r.fairness??'']);
   const csv=[head,...rows].map(a=>a.join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='heyoverhere_study_data.csv'; a.click();

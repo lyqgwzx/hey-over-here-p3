@@ -57,6 +57,12 @@
   .dl{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
   .dl .t{font-weight:700;font-size:15px}
   .dl .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .steps{display:flex;flex-direction:column;gap:10px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:15px}
+  .step .num{display:inline-flex;width:23px;height:23px;border-radius:50%;background:var(--teal);color:var(--ink);font-weight:700;align-items:center;justify-content:center;margin-right:10px;font-size:13px;vertical-align:middle}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .callout{margin-top:16px;background:var(--panel2);border:1px solid var(--teal);border-radius:12px;padding:15px 18px;font-size:14.5px;line-height:1.65}
+  @media(max-width:720px){ .grid3{grid-template-columns:1fr} }
   footer{padding:28px 0 50px;color:var(--muted);font-size:13px}
   @media(max-width:640px){ h1{font-size:34px} .grid{grid-template-columns:1fr} }
 </style>
@@ -87,6 +93,27 @@
   <section id="abstract">
     <h2>Abstract</h2>
     <p class="lead">Summoning an in-office service robot today means opening an app and tapping through menus — extra steps that fragment focused work. <b>“Hey, Over Here!”</b> asks whether <b>ambient voice summoning</b> can replace those explicit interfaces while preserving user trust and fairness. The robot responds to a spoken “over here,” uses <b>sound-source localization</b> to estimate the caller’s direction, and resolves it against a <b>semantic map</b> of named workstations. We reproduce the scenario as a browser simulation and run a within-subjects study across three conditions — <b>app baseline</b>, <b>voice-only</b>, and <b>voice + visual feedback</b> — measuring interaction friction, calibrated trust (especially when localization fails), multi-user fairness, and cognitive load.</p>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="lead" style="margin-bottom:16px">No app, no buttons — four steps:</p>
+    <div class="steps">
+      <div class="step"><span class="num">1</span><b>You speak.</b> Say “over here” from your desk.</div>
+      <div class="step"><span class="num">2</span><b>It hears your direction.</b> A microphone array estimates where the voice came from — this is <i>sound-source localization (SSL)</i>.</div>
+      <div class="step"><span class="num">3</span><b>It finds your desk.</b> That direction is matched to a named workstation — a <i>semantic map</i> (it knows “that’s Ben’s desk,” not just an angle).</div>
+      <div class="step"><span class="num">4</span><b>It drives over</b> and collects the waste.</div>
+    </div>
+  </section>
+
+  <section id="conditions">
+    <h2>What we compare — three ways to summon</h2>
+    <div class="grid3">
+      <div class="card"><span class="k" style="background:#2a2150;color:var(--purple)">APP · BASELINE</span><h3>Tap through an app</h3><p>Open the app, pick your desk, confirm — several taps.</p></div>
+      <div class="card"><span class="k" style="background:#16313a;color:var(--teal)">VOICE ONLY</span><h3>Just say it</h3><p>Say “over here.” The robot finds you by sound — but gives <b>no feedback</b>, so you can’t tell what it heard until it arrives.</p></div>
+      <div class="card"><span class="k" style="background:#16284a;color:var(--blue)">VOICE + VISUAL</span><h3>Voice, with feedback</h3><p>Same voice, plus the robot <b>shows what it understood</b>: a light ring, a beam pointing where it thinks you are, the desk it’s heading to, and a live ETA.</p></div>
+    </div>
+    <div class="callout"><b>The key question:</b> sound-source localization sometimes sends the robot to the <b>wrong desk</b>. Does the visual feedback let people keep trusting it <i>appropriately</i> — neither blindly nor not at all — when that happens? That balance is what we call <b>calibrated trust</b>.</div>
   </section>
 
   <section id="demo">

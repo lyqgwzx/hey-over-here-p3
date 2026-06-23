@@ -49,6 +49,16 @@
     color:#bff7ec; font-size:12.5px; font-weight:700; padding:3px 9px; border-radius:8px; display:none;
     transform:translate(-50%,-130%); pointer-events:none; white-space:nowrap }
 
+  #toast{ position:fixed; top:92px; left:50%; transform:translateX(-50%); z-index:22; max-width:88vw;
+    background:rgba(45,33,80,.96); border:1px solid var(--purple); color:#e9ddff; padding:11px 20px;
+    border-radius:13px; font-size:14.5px; display:none; box-shadow:0 8px 26px rgba(0,0,0,.45); text-align:center }
+  #queueBadge{ position:fixed; bottom:96px; left:50%; transform:translateX(-50%); z-index:18; max-width:90vw;
+    background:rgba(15,59,50,.96); border:1px solid var(--teal); color:#c4f7ec; padding:11px 20px;
+    border-radius:13px; font-size:14.5px; font-weight:600; display:none; box-shadow:0 8px 26px rgba(0,0,0,.4); text-align:center }
+  #langToggle{ position:fixed; top:14px; left:16px; z-index:24; background:rgba(20,30,52,.85);
+    border:1px solid var(--line); color:var(--text); border-radius:9px; padding:6px 12px; font-size:13px;
+    font-weight:700; cursor:pointer } #langToggle:hover{ border-color:var(--teal) }
+
   /* generic modal */
   .modal{ position:fixed; inset:0; background:rgba(6,10,20,.72); display:none; align-items:center;
     justify-content:center; z-index:40; backdrop-filter:blur(3px) }
@@ -110,9 +120,12 @@
   <span class="chip" id="seatChip">seat: —</span>
 </div>
 
+<button id="langToggle">中文</button>
 <div id="guideBanner"></div>
 <div id="lookHint">🖱 Drag to look around — the robot may be out of sight, but you’ll <b>hear</b> it</div>
 <div id="etaTag"></div>
+<div id="toast"></div>
+<div id="queueBadge"></div>
 
 <div id="controls">
   <button id="talkBtn">🎙 Hold to summon (“over here”)</button>
@@ -121,10 +134,10 @@
 
 <!-- phone app -->
 <div id="appPanel">
-  <div class="hd"><b>🗑 BinBot App</b><span class="x" id="appX">✕</span></div>
+  <div class="hd"><b id="appTitleEl">🗑 BinBot App</b><span class="x" id="appX">✕</span></div>
   <div class="stepLbl" id="appStep">Step 1 — open menu</div>
   <div id="appBody"></div>
-  <div class="uia">UI actions: <span id="appUia">0</span></div>
+  <div class="uia"><span id="uiActionsLbl">UI actions:</span> <span id="appUia">0</span></div>
 </div>
 
 <!-- researcher -->
@@ -145,14 +158,14 @@
 <!-- welcome -->
 <div class="modal" id="welcomeModal">
   <div class="card" style="width:520px;max-width:94vw">
-    <h3>Help test a voice-summoned office robot 🤖</h3>
-    <p>You’re seated at your desk in a shared office. A small cleaning robot collects rubbish — you’ll call it over a few times (sometimes by phone app, sometimes by saying <b>“over here”</b>) and rate how each felt.</p>
-    <p style="color:var(--teal);font-size:13.5px">This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around — and listen, the robot makes a sound you can locate by ear. There are <b>no right or wrong answers</b>. ~4 minutes.</p>
+    <h3 id="wTitle">Help test a voice-summoned office robot 🤖</h3>
+    <p id="wP1">You’re seated at your desk in a shared office. A small cleaning robot collects rubbish — you’ll call it over a few times (sometimes by phone app, sometimes by saying <b>“over here”</b>) and rate how each felt.</p>
+    <p id="wP2" style="color:var(--teal);font-size:13.5px">This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around — and listen, the robot makes a sound you can locate by ear. There are <b>no right or wrong answers</b>. ~4 minutes.</p>
     <div style="margin:14px 0 4px"><div style="display:flex;gap:10px">
-      <div style="flex:1"><div class="qt" style="font-size:13px;margin-bottom:6px">Name · 姓名</div>
+      <div style="flex:1"><div id="nameLbl" class="qt" style="font-size:13px;margin-bottom:6px">Name · 姓名</div>
         <input id="welcomeName" placeholder="e.g. Alex" autocomplete="off"
           style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" /></div>
-      <div style="flex:1"><div class="qt" style="font-size:13px;margin-bottom:6px">Student ID · 学号</div>
+      <div style="flex:1"><div id="sidLbl" class="qt" style="font-size:13px;margin-bottom:6px">Student ID · 学号</div>
         <input id="welcomeSid" placeholder="e.g. 12345678" autocomplete="off"
           style="width:100%;background:#1d2740;border:1px solid #2b3756;color:#e8edf7;border-radius:10px;padding:11px 13px;font-size:14px" /></div>
     </div>
@@ -167,18 +180,18 @@
 <!-- survey -->
 <div class="modal" id="surveyModal">
   <div class="card" style="width:540px;max-width:94vw">
-    <h3>Quick rating</h3>
+    <h3 id="svTitle">Quick rating</h3>
     <p class="mini" id="surveyMeta"></p>
-    <p class="mini">The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.</p>
-    <div class="qlabel main"><span class="star">★ Main</span> · “I could tell whether the robot understood me and where it was going.” (calibrated trust)</div>
-    <div class="likert" id="qTrust"></div><div class="ends"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
-    <div class="qlabel">“I trusted it to come to the right desk.” (confidence)</div>
-    <div class="likert" id="qConf"></div><div class="ends"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
-    <div class="qlabel">“Mentally, how demanding was this summon?” (NASA-TLX, single item)</div>
-    <div class="likert" id="qEff"></div><div class="ends"><span>1 · very low</span><span>5 · very high</span></div>
+    <p class="mini" id="svSame">The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.</p>
+    <div class="qlabel main" id="qTrustL"><span class="star">★ Main</span> · “I could tell whether the robot understood me and where it was going.” (calibrated trust)</div>
+    <div class="likert" id="qTrust"></div><div class="ends"><span id="endTrustLo">1 · strongly disagree</span><span id="endTrustHi">5 · strongly agree</span></div>
+    <div class="qlabel" id="qConfL">“I trusted it to come to the right desk.” (confidence)</div>
+    <div class="likert" id="qConf"></div><div class="ends"><span id="endConfLo">1 · strongly disagree</span><span id="endConfHi">5 · strongly agree</span></div>
+    <div class="qlabel" id="qEffL">“Mentally, how demanding was this summon?” (NASA-TLX, single item)</div>
+    <div class="likert" id="qEff"></div><div class="ends"><span id="endEffLo">1 · very low</span><span id="endEffHi">5 · very high</span></div>
     <div id="qFairWrap" style="display:none">
-      <div class="qlabel">“It handled everyone fairly — acknowledged me, queued us, gave an ETA.” (fairness)</div>
-      <div class="likert" id="qFair"></div><div class="ends"><span>1 · strongly disagree</span><span>5 · strongly agree</span></div>
+      <div class="qlabel" id="qFairL">“It handled everyone fairly — acknowledged me, queued us, gave an ETA.” (fairness)</div>
+      <div class="likert" id="qFair"></div><div class="ends"><span id="endFairLo">1 · strongly disagree</span><span id="endFairHi">5 · strongly agree</span></div>
     </div>
     <div class="row" style="margin-top:18px">
       <button class="act primary" id="surveySubmit">Submit rating</button>
@@ -190,11 +203,14 @@
 <!-- done -->
 <div class="modal" id="doneModal">
   <div class="card" style="width:480px;max-width:94vw">
-    <h3>✓ All done — thank you! 🎉</h3>
-    <p>That’s the whole study — your answers are saved.</p>
+    <h3 id="dTitle">✓ All done — thank you! 🎉</h3>
+    <p id="dP1">That’s the whole study — your answers are saved.</p>
     <p id="doneWho" style="color:#8fe3c8;font-size:13px;margin-top:8px"></p>
-    <p style="color:var(--muted);font-size:13px;margin-top:6px">Please hand the laptop back to the researcher (Li Ya). Thanks for taking part!</p>
-    <div class="row" style="margin-top:14px"><button class="act primary" id="doneClose">Done</button></div>
+    <p id="dHand" style="color:var(--muted);font-size:13px;margin-top:6px">Please hand the laptop back to the researcher (Li Ya). Thanks for taking part!</p>
+    <div class="row" style="margin-top:14px">
+      <button class="act primary" id="doneNext">▶ Next participant</button>
+      <button class="act" id="doneClose">Close</button>
+    </div>
   </div>
 </div>
 
@@ -203,6 +219,16 @@
 </script>
 <script type="module">
 import * as THREE from 'three';
+
+/* If the participant hits BROWSER REFRESH on the study page (inside the project site),
+   send them back to the white intro page — that’s “the start”. Only when served under /sim3d/
+   so the standalone dev copy is unaffected. */
+try{ const nav=performance.getEntriesByType('navigation')[0];
+  if(nav && nav.type==='reload' && location.pathname.includes('/sim3d/')){
+    const zh = new URLSearchParams(location.search).get('lang')==='zh' || localStorage.getItem('hoh_lang')==='zh';
+    location.replace(zh ? '../index.zh.html' : '../index.html');
+  }
+}catch(e){}
 
 /* ============================ STUDY SPEC (matches 05_仿真Demo) ============================ */
 const NAMES = [['Alice'],['Ben'],['Chloe'],['Dan'],['Eve'],['Finn']];
@@ -228,37 +254,42 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x12192a);
-scene.fog = new THREE.Fog(0x12192a, 20, 46);
+scene.background = new THREE.Color(0xdfe9f4);
+scene.fog = new THREE.Fog(0xdfe9f4, 24, 54);
 
 const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.05, 100);
 const seat = deskById(SEAT_ID);
 const EYE = 1.18;
 // seated just in front of the desk (desk sits against the z=-5 wall), facing the desk/monitor (toward -z)
-camera.position.set(seat.x, EYE, seat.z + 0.85);
+camera.position.set(seat.x, EYE, seat.z + 0.5);   // seated close to the desk (on the stool)
 scene.add(camera);
 
 // lighting
-scene.add(new THREE.HemisphereLight(0xc4d4ee, 0x45506b, 2.2));
-const amb = new THREE.AmbientLight(0x8a98ba, 1.35); scene.add(amb);
-const key = new THREE.DirectionalLight(0xf2f7ff, 2.1); key.position.set(6,12,4);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd2dae6, 2.0));
+const amb = new THREE.AmbientLight(0xffffff, 1.55); scene.add(amb);
+const key = new THREE.DirectionalLight(0xfff4e2, 2.4); key.position.set(6,12,4);
 key.castShadow = true; key.shadow.mapSize.set(1024,1024);
 key.shadow.camera.left=-12; key.shadow.camera.right=12; key.shadow.camera.top=12; key.shadow.camera.bottom=-12;
 scene.add(key);
 // soft ceiling strip lights (physical units → need real candela values to read)
 for(const lx of [-4,4]) for(const lz of [-3,3]){
-  const pl = new THREE.PointLight(0xbfe0ff, 9, 22, 2); pl.position.set(lx,3.0,lz); scene.add(pl);
+  const pl = new THREE.PointLight(0xfff0d8, 5, 22, 2); pl.position.set(lx,3.0,lz); scene.add(pl);
 }
 
 // floor
-const floorMat = new THREE.MeshStandardMaterial({ color:0x3a4a68, roughness:0.78, metalness:0.05 });
+const floorMat = new THREE.MeshStandardMaterial({ color:0xc6d2e4, roughness:0.6, metalness:0.06 });
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(16,11), floorMat);
 floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
-// subtle floor grid
-const grid = new THREE.GridHelper(16, 16, 0x2b3756, 0x1f2942); grid.position.y = 0.01; scene.add(grid);
+// floor grid — clearer, for depth
+const grid = new THREE.GridHelper(16, 16, 0x97a6c0, 0xaab7cf); grid.position.y = 0.01;
+grid.material.opacity = 0.85; grid.material.transparent = true; scene.add(grid);
+// central aisle runner — a coloured strip that marks the walking path (a distinct "place")
+const runner = new THREE.Mesh(new THREE.PlaneGeometry(15.4, 2.7),
+  new THREE.MeshStandardMaterial({ color:0x9ed7cb, roughness:0.88 }));
+runner.rotation.x = -Math.PI/2; runner.position.set(0,0.014,0); runner.receiveShadow = true; scene.add(runner);
 
 // walls
-const wallMat = new THREE.MeshStandardMaterial({ color:0x303d58, roughness:0.95 });
+const wallMat = new THREE.MeshStandardMaterial({ color:0xf1ece1, roughness:0.95 });
 function wall(w,h,d,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wallMat); m.position.set(x,y,z); m.receiveShadow=true; scene.add(m); return m; }
 wall(16,3.2,0.3, 0,1.6,-5.5);   // back (top row against this)
 wall(16,3.2,0.3, 0,1.6, 5.5);   // front
@@ -266,19 +297,30 @@ wall(0.3,3.2,11, -8,1.6,0);     // left
 wall(0.3,3.2,11,  8,1.6,0);     // right
 
 // cubicle dividers (occlusion): between desks on each row, leaving central aisle |z|<1.45 open
-const partMat = new THREE.MeshStandardMaterial({ color:0x223049, roughness:0.9 });
+const partMat = new THREE.MeshStandardMaterial({ color:0xa3b6d4, roughness:0.85 });
 function partition(x, z0, z1){
   const len = Math.abs(z1-z0); const m=new THREE.Mesh(new THREE.BoxGeometry(0.14,1.65,len),partMat);
   m.position.set(x, 0.825, (z0+z1)/2); m.castShadow=true; m.receiveShadow=true; scene.add(m);
 }
-for(const px of [-2.5, 2.5]){ partition(px,-5.4,-1.45); partition(px, 1.45, 5.4); }
-// short side returns so each desk feels enclosed
+for(const px of [-2.5, 2.5]){ partition(px,-5.4,-1.6); partition(px, 1.6, 5.4); }
+// front (aisle-side) walls WITH a doorway at each desk — semi-enclosed cubicles: the robot can drive
+// in, but your view of the room is blocked, so you must turn to see where it went (the occlusion).
+function frontWall(z, x0, x1){ const len=Math.abs(x1-x0);
+  const m=new THREE.Mesh(new THREE.BoxGeometry(len,1.65,0.14),partMat);
+  m.position.set((x0+x1)/2, 0.825, z); m.castShadow=true; m.receiveShadow=true; scene.add(m); }
+const CUBES=[ {x0:-8,x1:-2.5,dx:-5}, {x0:-2.5,x1:2.5,dx:0}, {x0:2.5,x1:8,dx:5} ];
+for(const fz of [-1.6, 1.6]) for(const c of CUBES){
+  const gL=c.dx-0.75, gR=c.dx+0.75;                 // 1.5 m doorway centred on the desk
+  if(gL > c.x0+0.05) frontWall(fz, c.x0, gL);
+  if(gR < c.x1-0.05) frontWall(fz, gR, c.x1);
+}
+const beacons={};   // per-desk "locate" light (visual condition): on = robot locked onto this desk; flash rate = how near
 function deskGroup(d){
   const g = new THREE.Group(); g.position.set(d.x, 0, d.z);
   const wall_ = d.z<0 ? -1 : 1;
   // desk top
   const top = new THREE.Mesh(new THREE.BoxGeometry(2.0,0.08,0.85),
-    new THREE.MeshStandardMaterial({ color:0x2c3a55, roughness:0.7 }));
+    new THREE.MeshStandardMaterial({ color:0xd9c39c, roughness:0.6 }));
   top.position.set(0,0.74, wall_*0.55); top.castShadow=true; top.receiveShadow=true; g.add(top);
   for(const lx of [-0.85,0.85]) for(const lz of [-0.3,0.3]){
     const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.74,0.08),partMat);
@@ -288,13 +330,31 @@ function deskGroup(d){
   const mon=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.4,0.05),
     new THREE.MeshStandardMaterial({ color:0x0a0d16, emissive:0x16314a, emissiveIntensity:0.6 }));
   mon.position.set(0,1.05, wall_*0.85); g.add(mon);
-  // chair
-  const ch=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.3,0.12,16),
-    new THREE.MeshStandardMaterial({ color:0x2a3422 }));
-  ch.position.set(0,0.5, -wall_*0.25); g.add(ch);
+  // bar stool (seat + central post + foot base, so it's grounded, not floating) — not at your OWN seat
+  if(d.id!==SEAT_ID){
+    const sx=0, sz=-wall_*0.25;
+    const seatMat=new THREE.MeshStandardMaterial({ color:0x4fa394, roughness:0.55 });
+    const frameMat=new THREE.MeshStandardMaterial({ color:0x8a97a8, roughness:0.45, metalness:0.35 });
+    const seat=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.27,0.1,18), seatMat);
+    seat.position.set(sx,0.5,sz); seat.castShadow=true; g.add(seat);
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.45,10), frameMat);
+    post.position.set(sx,0.225,sz); post.castShadow=true; g.add(post);
+    const foot=new THREE.Mesh(new THREE.CylinderGeometry(0.21,0.23,0.04,18), frameMat);
+    foot.position.set(sx,0.02,sz); foot.receiveShadow=true; g.add(foot);
+  }
   // name placard — only on OTHER desks (you don't see your own nameplate hovering in your face)
   if(d.id!==SEAT_ID){ const lab = makeLabel(d.id+' · '+d.name);
     lab.position.set(0,1.7, wall_*0.6); g.add(lab); }
+  // desk locate-light — a small lamp on the desk that signals whether the robot has locked onto YOU
+  const bMat=new THREE.MeshStandardMaterial({ color:0x12161f, emissive:0x000000, emissiveIntensity:0 });
+  const bx=0.6, bz=wall_*0.2;                     // sit it ON the desk top, toward the aisle-facing corner
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.06,12),
+    new THREE.MeshStandardMaterial({ color:0x2a3346, roughness:0.6 }));
+  base.position.set(bx,0.81,bz); base.castShadow=true; g.add(base);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(0.055,16,12), bMat);
+  orb.position.set(bx,0.9,bz); g.add(orb);
+  const bLight=new THREE.PointLight(0xffe08a,0,2.0,2); bLight.position.set(bx,1.0,bz); g.add(bLight);
+  beacons[d.id]={ mat:bMat, light:bLight, desk:d, active:false };
   scene.add(g);
   return g;
 }
@@ -405,7 +465,10 @@ addEventListener('pointermove', e=>{
   pitch = Math.max(-1.05, Math.min(1.05, pitch));
   lastX=e.clientX; lastY=e.clientY;
 });
+let topdownView=false;   // debug-only (via __sim.setTopdown) — for documentation figures
 function applyCamera(){
+  if(topdownView){ camera.up.set(0,0,-1); camera.position.set(0,13,0.02); camera.lookAt(0,0,0); return; }
+  camera.up.set(0,1,0); camera.position.set(seat.x, EYE, seat.z+0.5);
   const dir = new THREE.Vector3(
     Math.sin(yaw)*Math.cos(pitch), Math.sin(pitch), Math.cos(yaw)*Math.cos(pitch));
   camera.lookAt(camera.position.clone().add(dir));
@@ -416,7 +479,10 @@ let participantId='', participantName='', participantSid='';
 let condition='visual';
 let surveysOn=true;
 let study=null;                  // { seq, i, fair }
-const trials=[];
+const TRIALS_KEY='hoh_trials_v1';
+let trials=[];
+try{ const s=JSON.parse(localStorage.getItem(TRIALS_KEY)||'[]'); if(Array.isArray(s)) trials=s; }catch(e){}
+function saveTrials(){ try{ localStorage.setItem(TRIALS_KEY, JSON.stringify(trials)); }catch(e){} }   // survives reload / crash
 let pending=null;                // trial awaiting survey
 const robotState = { mode:'idle', t:0 };
 const queue=[];                  // pending requests
@@ -457,12 +523,12 @@ function makeRequest(callerId, method, uiActions, sslMode, ghost){
   return req;
 }
 
-function approachPoint(d){ return { x:d.x, z: d.z<0 ? d.z+1.55 : d.z-1.55 }; }
+function approachPoint(d){ return { x:d.x, z: d.z<0 ? -2.1 : 2.1 }; }   // just inside the cubicle doorway
 // right-angle route via the central aisle: pull out to the aisle, slide along x, then approach.
 // used for BOTH the outward trip and the return, so the robot never cuts diagonally through walls.
 function buildPathVia(fromX, fromZ, toX, toZ){
-  return [ { x:fromX, z: THREE.MathUtils.clamp(fromZ,-1.2,1.2) },
-           { x:toX,   z: THREE.MathUtils.clamp(fromZ,-1.2,1.2) },
+  return [ { x:fromX, z: THREE.MathUtils.clamp(fromZ,-0.95,0.95) },
+           { x:toX,   z: THREE.MathUtils.clamp(fromZ,-0.95,0.95) },
            { x:toX,   z: toZ } ];
 }
 function stepPath(dt){
@@ -483,7 +549,7 @@ function startServing(req){
   if(req.method==='visual'){ showBelief(req.targetId, true); }
 }
 
-const ROBOT_SPEED=2.4, THINK_T=0.7, SERVE_T=1.1;
+const ROBOT_SPEED=1.4, THINK_T=1.3, SERVE_T=1.5;   // slower + a longer "thinking" beat, so you can turn and watch
 function tickRobot(dt){
   robotState.t+=dt;
   if(robotState.mode==='idle'){
@@ -522,20 +588,19 @@ function arrive(){
 function finishActive(){
   const req=active; active=null;
   completeTrial(req);
-  path=buildPathVia(robot.position.x, robot.position.z, DOCK.x, DOCK.z); pathI=0;  // route home via the aisle
-  robotState.mode='returning';
+  if(queue.length){ startServing(queue.shift()); }   // another caller waiting → serve them directly (fairness)
+  else { path=buildPathVia(robot.position.x, robot.position.z, DOCK.x, DOCK.z); pathI=0; robotState.mode='returning'; }
 }
 function lerpAngle(a,b,t){ let d=((b-a+Math.PI*3)%(Math.PI*2))-Math.PI; return a+d*t; }
 
 function setLED(hex){ ledMat.emissive.setHex(hex);
   robotGlow.color.setHex(hex===0 ? 0xffffff : hex);
-  robotGlow.userData.base = hex===0 ? 0 : 16; }   // base candela when lit
+  robotGlow.userData.base = hex===0 ? 0 : 24; }   // base candela when lit (stronger so it reads on the bright floor)
 function showBelief(targetId, on){
-  if(!on || targetId==null){ beam.visible=false; mark.visible=false; beamMat.opacity=0; markMat.opacity=0; return; }
-  const d=deskById(targetId); const ap=approachPoint(d);
-  mark.position.set(d.x,0.05,d.z); mark.visible=true; markMat.opacity=0.9;
-  // beam from robot toward predicted desk
-  beam.visible=true; beamMat.opacity=0.7;
+  // light only the desk the robot has locked onto (in the visual condition). Your own desk lighting up
+  // = "it got me"; staying dark while it serves elsewhere = "it didn't lock onto me".
+  for(const id in beacons) beacons[id].active = (!!on && id===targetId);
+  beam.visible=false; mark.visible=false;   // old floor ring / direction line are retired
 }
 function updateBeam(){
   if(!beam.visible || !active) return;
@@ -565,9 +630,144 @@ function driveAudio(dt){
 
 /* ============================ STUDY FLOW ============================ */
 const $ = id => document.getElementById(id);
+
+/* ---- i18n (language is GLOBAL: from ?lang=, else saved choice, else en) ---- */
+let lang = (()=>{ const u=new URLSearchParams(location.search).get('lang');
+  const v=(u||localStorage.getItem('hoh_lang')||'en'); const r=(v==='zh')?'zh':'en';
+  localStorage.setItem('hoh_lang',r); return r; })();
+const I18N = {
+ en:{
+  lookHint:'🖱 Drag to look around — the robot may be out of sight, but you’ll <b>hear</b> it',
+  talkIdle:'🎙 Hold to summon (“over here”)', talkLive:'● Listening… release to summon', openApp:'📱 Open app',
+  appTitle:'🗑 BinBot App', uiActions:'UI actions:',
+  cond_app:'app baseline', cond_voice:'voice only', cond_visual:'voice + visual', condLabel:'condition', seatLabel:'seat',
+  wTitle:'Help test a voice-summoned office robot 🤖',
+  wP1:'You’re seated at your desk in a shared office. A small cleaning robot collects rubbish — you’ll call it over a few times (sometimes by phone app, sometimes by saying <b>“over here”</b>) and rate how each felt.',
+  wP2:'This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around — and listen, the robot makes a sound you can locate by ear. There are <b>no right or wrong answers</b>. ~4 minutes.',
+  nameLbl:'Name · 姓名', sidLbl:'Student ID · 学号', namePh:'e.g. Alex', sidPh:'e.g. 12345678',
+  wHint:'Fill in at least one — name or student ID. · 至少填一个即可。',
+  wHintErr:'Please fill in at least one — your name or student ID. · 请至少填写姓名或学号其一。',
+  wBegin:'▶ Begin the experiment (~4 min)', wSkip:'Just explore',
+  svTitle:'Quick rating',
+  svSame:'The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.',
+  qTrust:'<span class="star">★ Main</span> · “From the moment I called it, I could always tell where the robot was going — never confused along the way.” (awareness)',
+  qConf:'“I trusted it to come to the right desk.” (confidence)',
+  qEff:'“Mentally, how demanding was this summon?” (NASA-TLX, single item)',
+  qFair:'“It handled everyone fairly — acknowledged me, queued us, gave an ETA.” (fairness)',
+  endAwareLo:'1 · couldn’t tell', endAwareHi:'5 · always knew', endConfLo:'1 · not confident', endConfHi:'5 · fully trusted', endLow:'1 · effortless', endHigh:'5 · exhausting', endFairLo:'1 · very unfair', endFairHi:'5 · very fair',
+  svSubmit:'Submit rating', svSkip:'Skip',
+  dTitle:'✓ All done — thank you! 🎉', dP1:'That’s the whole study — your answers are saved.',
+  dHand:'Please hand the laptop back to the researcher (Li Ya). Thanks for taking part!', dClose:'Close', dNext:'▶ Next participant', recordedAs:'Recorded as: ',
+  appStep1:'Step 1 — open menu', appStep2:'Step 2 — pick your desk', appStep3:'Step 3 — confirm',
+  menu:'☰ Menu ▾', you:'(you)', summonTo:'✓ Summon to ',
+  scenarioOf:'Scenario {i} of {n}',
+  app_what:'<b>There’s a snack wrapper on your desk.</b> To get the cleaning robot over, you use its phone app.',
+  app_instr:'📱 Open the BinBot app → tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.',
+  voice_what:'<b>Your hands are full</b>, so you just call out. The robot shows <b>no lights or screen</b> — turn and listen, you may only <b>hear</b> it until it appears.',
+  voice_instr:'🎙 Hold the button (or press <b>Space</b>) and say “over here”.',
+  visual_what:'<b>You call it by voice</b> — and this robot <b>lights up and points</b> as it goes, showing what it heard and where it’s heading.',
+  visual_instr:'🎙 Hold the button (or press <b>Space</b>) and say “over here”, and watch the robot.',
+  fair_what:'<b>Rush hour.</b> The office is busy — the robot may already be helping someone else.',
+  fair_instr:'🎙 Call it the usual way (hold the button / press <b>Space</b>) — then see how it <b>acknowledges you, queues you, and gives an ETA</b>.',
+  colleagueCalled:'🔔 <b>{name}</b> got there just before you — the robot is serving them first.',
+  queued:'✓ Heard you — serving <b>{name}</b> first. You’re next · ETA ~{eta}s',
+  surveyMeta:'Condition: {cond} · caller: {caller} · arrived in {t}s',
+  exploreTitle:'Explore mode', exploreBody:'Drag to look around · hold the mic or press <b>Space</b> to summon · listen for the robot.',
+  holdHint:'Hold the button down (or hold Space) while you speak — a quick tap won’t summon.'
+ },
+ zh:{
+  lookHint:'🖱 拖动鼠标四处看 —— 机器人可能不在你视野里，但你能<b>听</b>到它',
+  talkIdle:'🎙 按住召唤（“over here”）', talkLive:'● 正在聆听… 松开即召唤', openApp:'📱 打开 App',
+  appTitle:'🗑 BinBot App', uiActions:'操作次数：',
+  cond_app:'App 基线', cond_voice:'纯语音', cond_visual:'语音 + 视觉', condLabel:'条件', seatLabel:'你的工位',
+  wTitle:'帮忙测试一台语音召唤的办公室机器人 🤖',
+  wP1:'你坐在共享办公室里自己的工位上。一台小型清洁机器人负责收垃圾——你会把它叫过来几次（有时用手机 App，有时直接喊一句 <b>“over here”</b>），并给每次体验打分。',
+  wP2:'这是<b>第一人称</b>视角：你看不到整个房间。拖动鼠标四处看——也用耳朵听，机器人会发出可定位的声音。<b>没有标准答案</b>，跟着感觉走。约 4 分钟。',
+  nameLbl:'姓名 · Name', sidLbl:'学号 · Student ID', namePh:'例如 李华', sidPh:'例如 12345678',
+  wHint:'姓名或学号，至少填一个即可。', wHintErr:'请至少填写姓名或学号其一。',
+  wBegin:'▶ 开始实验（约 4 分钟）', wSkip:'随便看看',
+  svTitle:'快速评分',
+  svSame:'<b>每一次</b>召唤后都问同样的问题——这样才能公平地比较几种方式。',
+  qTrust:'<span class="star">★ 主问题</span> · “开始召唤后，我始终能判断出机器人要去哪里、中途没有迷惑过。”（觉察）',
+  qConf:'“我相信它会到正确的工位。”（信心）',
+  qEff:'“这次召唤在脑力上有多费劲？”（NASA-TLX 单项）',
+  qFair:'“它公平地对待了每个人——应答了我、让我排队、给了预计到达时间。”（公平）',
+  endAwareLo:'1 · 我不清楚', endAwareHi:'5 · 我很清楚', endConfLo:'1 · 我不确定', endConfHi:'5 · 我很相信', endLow:'1 · 毫不费力', endHigh:'5 · 我很疲惫', endFairLo:'1 · 很不公平', endFairHi:'5 · 很公平',
+  svSubmit:'提交评分', svSkip:'跳过',
+  dTitle:'✓ 全部完成 —— 谢谢！🎉', dP1:'整个实验到此结束——你的回答已保存。',
+  dHand:'请把电脑交还给研究者（李亚）。感谢参与！', dClose:'关闭', dNext:'▶ 下一位被试', recordedAs:'已记录为：',
+  appStep1:'第 1 步 —— 打开菜单', appStep2:'第 2 步 —— 选择你的工位', appStep3:'第 3 步 —— 确认',
+  menu:'☰ 菜单 ▾', you:'（你）', summonTo:'✓ 召唤到 ',
+  scenarioOf:'场景 {i} / {n}',
+  app_what:'<b>你桌上有片零食包装纸。</b>要把清洁机器人叫过来，你用它的手机 App。',
+  app_instr:'📱 打开 BinBot App → 点<b>菜单</b> → 选<b>你的</b>工位 → <b>召唤</b>。',
+  voice_what:'<b>你手上正忙</b>，于是直接喊一声。机器人<b>没有灯、也没有屏幕</b>——转头、用耳朵听，在它出现之前你可能只能<b>听</b>到它。',
+  voice_instr:'🎙 按住按钮（或按<b>空格</b>）喊一句 “over here”。',
+  visual_what:'<b>你喊一声</b>把它叫来——这台机器人会<b>亮灯并指向</b>，一路显示它听到了什么、要去哪里。',
+  visual_instr:'🎙 按住按钮（或按<b>空格</b>）喊 “over here”，并留意机器人。',
+  fair_what:'<b>高峰期。</b>办公室很忙——机器人可能正在服务别人。',
+  fair_instr:'🎙 像平常一样召唤它（按住按钮 / 按<b>空格</b>），然后看它如何<b>应答你、让你排队、给出预计到达时间</b>。',
+  colleagueCalled:'🔔 <b>{name}</b> 比你早一步——机器人正在先服务他。',
+  queued:'✓ 已收到你的请求 —— 正在先服务 <b>{name}</b>。你是下一个 · 预计 ~{eta} 秒',
+  surveyMeta:'条件：{cond} · 呼叫者：{caller} · 用时 {t} 秒',
+  exploreTitle:'自由探索模式', exploreBody:'拖动四处看 · 按住麦克风或按<b>空格</b>召唤 · 用耳朵听机器人。',
+  holdHint:'请按住按钮不放（或按住空格）、同时说话——轻轻一点不会召唤。'
+ }
+};
+function t(k){ const o=I18N[lang]||I18N.en; return (o[k]!=null)?o[k]:(I18N.en[k]!=null?I18N.en[k]:k); }
+function tf(k,vars){ let s=t(k); for(const p in vars) s=s.split('{'+p+'}').join(vars[p]); return s; }
+function condName(c){ return t('cond_'+c); }
+
+/* ---- toast + queue badge: make multi-user fairness visible ---- */
+let toastTimer=null;
+function toast(html, ms){ const el=$('toast'); el.innerHTML=html; el.style.display='block';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ el.style.display='none'; }, ms||3800); }
+let myQueuedReq=null, colleagueName='';
+function queuedEtaSec(){
+  if(!active) return 1;
+  let r=0;
+  if(robotState.mode==='thinking') r+=Math.max(0,THINK_T-robotState.t);
+  else if(robotState.mode==='serving') r+=Math.max(0,SERVE_T-robotState.t);
+  else if(robotState.mode==='moving'){ const ap=approachPoint(deskById(active.targetId));
+    r+=Math.hypot(ap.x-robot.position.x,ap.z-robot.position.z)/ROBOT_SPEED + SERVE_T; }
+  const ca=approachPoint(deskById(active.targetId)), ma=approachPoint(seat);
+  r+=THINK_T + (Math.abs(ca.x-ma.x)+Math.abs(ca.z-ma.z))/ROBOT_SPEED;
+  return Math.max(1,r);
+}
+function updateQueueBadge(){
+  const b=$('queueBadge');
+  if(!myQueuedReq){ b.style.display='none'; return; }
+  if(active===myQueuedReq || myQueuedReq.tArrive){ b.style.display='none'; myQueuedReq=null; return; }
+  b.style.display='block'; b.innerHTML = tf('queued',{ name:colleagueName, eta:Math.round(queuedEtaSec()) });
+}
+function applyI18n(){
+  $('lookHint').innerHTML=t('lookHint');
+  if(!talking) $('talkBtn').innerHTML=t('talkIdle');
+  $('appBtn').innerHTML=t('openApp');
+  $('appTitleEl').innerHTML=t('appTitle'); $('uiActionsLbl').innerHTML=t('uiActions');
+  $('wTitle').innerHTML=t('wTitle'); $('wP1').innerHTML=t('wP1'); $('wP2').innerHTML=t('wP2');
+  $('nameLbl').innerHTML=t('nameLbl'); $('sidLbl').innerHTML=t('sidLbl');
+  $('welcomeName').placeholder=t('namePh'); $('welcomeSid').placeholder=t('sidPh');
+  if(!$('welcomeHint').dataset.err) $('welcomeHint').innerHTML=t('wHint');
+  $('welcomeBegin').innerHTML=t('wBegin'); $('welcomeSkip').innerHTML=t('wSkip');
+  $('svTitle').innerHTML=t('svTitle'); $('svSame').innerHTML=t('svSame');
+  $('qTrustL').innerHTML=t('qTrust'); $('qConfL').innerHTML=t('qConf'); $('qEffL').innerHTML=t('qEff'); $('qFairL').innerHTML=t('qFair');
+  $('endTrustLo').innerHTML=t('endAwareLo'); $('endTrustHi').innerHTML=t('endAwareHi');
+  $('endConfLo').innerHTML=t('endConfLo'); $('endConfHi').innerHTML=t('endConfHi');
+  $('endEffLo').innerHTML=t('endLow'); $('endEffHi').innerHTML=t('endHigh');
+  $('endFairLo').innerHTML=t('endFairLo'); $('endFairHi').innerHTML=t('endFairHi');
+  $('surveySubmit').innerHTML=t('svSubmit'); $('surveySkip').innerHTML=t('svSkip');
+  $('dTitle').innerHTML=t('dTitle'); $('dP1').innerHTML=t('dP1'); $('dHand').innerHTML=t('dHand'); $('doneClose').innerHTML=t('dClose'); $('doneNext').innerHTML=t('dNext');
+  $('langToggle').textContent = (lang==='zh')?'EN':'中文';
+  setCondition(condition);
+  $('seatChip').innerHTML = t('seatLabel')+': <b>'+seat.id+' · '+seat.name+'</b>';
+  if(typeof study!=='undefined' && study && study.curItem) renderGuideBanner();
+  if($('surveyModal').classList.contains('show') && pending)
+    $('surveyMeta').textContent = tf('surveyMeta',{cond:condName(pending.condition),caller:pending.caller,t:pending.arrival.toFixed(1)});
+}
+
 function setCondition(c){ condition=c;
-  $('condChip').innerHTML = 'condition: <b>'+({app:'app baseline',voice:'voice only',visual:'voice + visual'}[c])+'</b>'; }
-$('seatChip').innerHTML = 'seat: <b>'+seat.id+' · '+seat.name+'</b>';
+  $('condChip').innerHTML = t('condLabel')+': <b>'+condName(c)+'</b>'; }
 
 // guided sequence: 5 randomised single-summon trials + fairness last (identical design to 2D)
 function startGuidedStudy(){
@@ -583,41 +783,44 @@ function startGuidedStudy(){
 }
 function guidedStep(){
   if(!study) return;
+  myQueuedReq=null; $('queueBadge').style.display='none';
   if(study.i>=study.seq.length){
     hideBanner(); document.body.classList.remove('pmode');
-    $('doneWho').textContent='Recorded as: '+whoLabel(participantName,participantSid);
+    $('doneWho').textContent=t('recordedAs')+whoLabel(participantName,participantSid);
     $('doneModal').classList.add('show'); study=null; refresh(); return;
   }
-  const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.fair=!!item.fair;
-  let what, instr;
-  if(item.fair){
-    what='<b>Rush hour.</b> You and a colleague across the room both have rubbish and call the robot at the <b>same moment</b>.';
-    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here” — then watch & listen for how it decides who to serve first.';
-  } else if(item.cond==='app'){
-    what='<b>There’s a snack wrapper on your desk.</b> To get the cleaning robot over, you use its phone app.';
-    instr='📱 Open the BinBot app → tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.';
-  } else if(item.cond==='voice'){
-    what='<b>Your hands are full</b>, so you just call out. The robot shows <b>no lights or screen</b> — turn and listen, you may only <b>hear</b> it until it appears.';
-    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”.';
-  } else {
-    what='<b>You call out again</b> — but this robot <b>lights up and points</b> as it goes, showing what it heard and where it’s heading.';
-    instr='🎙 Hold the button (or press <b>Space</b>) and say “over here”, and watch the robot.';
+  const item=study.seq[study.i]; setCondition(item.cond); study.curSsl=item.ssl||null; study.fair=!!item.fair; study.curItem=item;
+  if(item.fair){ // pick the colleague across the room (farthest desk from your seat)
+    const o=DESKS.filter(d=>d.id!==seat.id)
+      .sort((a,b)=>Math.hypot(b.x-seat.x,b.z-seat.z)-Math.hypot(a.x-seat.x,a.z-seat.z))[0];
+    study.colleague=o; colleagueName=o.name; study.colleagueSent=false;
   }
-  showBanner('<div class="sc">Scenario '+(study.i+1)+' of '+study.seq.length+'</div><div class="wt">'+what+'</div><div class="instr">'+instr+'</div>');
-  // controls per condition
+  renderGuideBanner();
   $('talkBtn').style.display = item.cond==='app' ? 'none' : 'inline-block';
   $('appBtn').style.display  = item.cond==='app' ? 'inline-block' : 'none';
+  // nothing auto-fires — even in the fairness scenario YOU summon first; the colleague is
+  // then revealed as "already being served" in the response (no surprise pre-event).
   $('talkBtn').disabled=false; $('appBtn').disabled=false;
-  // fairness: a colleague also calls, a beat after the scene appears
-  if(item.fair){ setTimeout(()=>{ const o=DESKS.find(d=>d.id!==seat.id);
-    makeRequest(o.id,'visual',1,'correct',true); }, 1200); }
+}
+function renderGuideBanner(){
+  if(!study||!study.curItem) return; const item=study.curItem;
+  const what = item.fair ? tf('fair_what',{name:colleagueName}) : t(item.cond+'_what');
+  const instr= item.fair ? t('fair_instr') : t(item.cond+'_instr');
+  showBanner('<div class="sc">'+tf('scenarioOf',{i:study.i+1,n:study.seq.length})+'</div><div class="wt">'+what+'</div><div class="instr">'+instr+'</div>');
 }
 
 function summonParticipant(){
   if(study){ if(study.i>=study.seq.length) return; }
   const method=condition;
   const uiActions = method==='app' ? appTaps : 1;
-  makeRequest(seat.id, method, uiActions, study?study.curSsl:undefined, false);
+  // fairness: the moment YOU summon, a colleague is revealed as already being served → you queue behind
+  if(study && study.fair && study.colleague && !study.colleagueSent){
+    study.colleagueSent=true;
+    toast(tf('colleagueCalled',{name:colleagueName}), 4500);
+    makeRequest(study.colleague.id,'visual',1,'correct',true);   // colleague enqueued first → robot serves them first
+  }
+  const req=makeRequest(seat.id, method, uiActions, study?study.curSsl:undefined, false);
+  if(study && study.fair) myQueuedReq=req;   // drives the “heard you · you’re next · ETA” badge
   $('talkBtn').disabled=true; $('appBtn').disabled=true;
   hideLookHint();
 }
@@ -642,8 +845,8 @@ function completeTrial(req){
     at: new Date().toISOString(),
     trust:null, confidence:null, effort:null, fairness:null
   };
-  trials.push(rec); refresh();
-  if(surveysOn){ pending=rec; openSurvey(rec); }
+  trials.push(rec); saveTrials(); refresh();
+  if(surveysOn){ pending=rec; setTimeout(()=>{ if(pending===rec) openSurvey(rec); }, 2950); }   // let the robot finish + drive off before asking
   else if(study){ study.i++; setTimeout(guidedStep,700); }
 }
 
@@ -658,7 +861,7 @@ function openSurvey(rec){
   sv={trust:null,confidence:null,effort:null,fairness:null};
   ['qTrust','qConf','qEff','qFair'].forEach(id=>[...$(id).children].forEach(c=>c.classList.remove('sel')));
   $('qFairWrap').style.display = rec.fair ? 'block' : 'none';
-  $('surveyMeta').textContent = 'Condition: '+rec.condition+' · caller: '+rec.caller+' · arrived in '+rec.arrival.toFixed(1)+'s';
+  $('surveyMeta').textContent = tf('surveyMeta',{cond:condName(rec.condition),caller:rec.caller,t:rec.arrival.toFixed(1)});
   $('surveyModal').classList.add('show');
 }
 function closeSurveyAdvance(){
@@ -666,34 +869,36 @@ function closeSurveyAdvance(){
   if(study){ study.i++; setTimeout(guidedStep,500); }
 }
 $('surveySubmit').onclick=()=>{ if(pending){ pending.trust=sv.trust; pending.confidence=sv.confidence;
-  pending.effort=sv.effort; pending.fairness=pending.fair?sv.fairness:null; refresh(); } pending=null; closeSurveyAdvance(); };
+  pending.effort=sv.effort; pending.fairness=pending.fair?sv.fairness:null; saveTrials(); refresh(); } pending=null; closeSurveyAdvance(); };
 $('surveySkip').onclick=()=>{ pending=null; closeSurveyAdvance(); };
 
 /* ---- phone app overlay ---- */
 let appTaps=0;
 function openApp(){ appTaps=0; $('appUia').textContent='0'; $('appPanel').style.display='block'; appMenu(); }
-function appMenu(){ $('appStep').textContent='Step 1 — open menu';
-  $('appBody').innerHTML=''; const b=document.createElement('div'); b.className='opt'; b.textContent='☰ Menu ▾';
+function appMenu(){ $('appStep').textContent=t('appStep1');
+  $('appBody').innerHTML=''; const b=document.createElement('div'); b.className='opt'; b.textContent=t('menu');
   b.onclick=()=>{ appTaps++; $('appUia').textContent=appTaps; appList(); }; $('appBody').appendChild(b); }
-function appList(){ $('appStep').textContent='Step 2 — pick your desk';
+function appList(){ $('appStep').textContent=t('appStep2');
   $('appBody').innerHTML=''; DESKS.forEach(d=>{ const o=document.createElement('div');
-    o.className='opt'+(d.id===seat.id?' you':''); o.textContent=d.id+' · '+d.name+(d.id===seat.id?'  (you)':'');
+    o.className='opt'+(d.id===seat.id?' you':''); o.textContent=d.id+' · '+d.name+(d.id===seat.id?'  '+t('you'):'');
     o.onclick=()=>{ appTaps++; $('appUia').textContent=appTaps; appConfirm(d); }; $('appBody').appendChild(o); }); }
-function appConfirm(d){ $('appStep').textContent='Step 3 — confirm';
+function appConfirm(d){ $('appStep').textContent=t('appStep3');
   $('appBody').innerHTML=''; const o=document.createElement('div'); o.className='opt you';
-  o.textContent='✓ Summon to '+d.id+' · '+d.name; o.onclick=()=>{ appTaps++; $('appUia').textContent=appTaps;
+  o.textContent=t('summonTo')+d.id+' · '+d.name; o.onclick=()=>{ appTaps++; $('appUia').textContent=appTaps;
     $('appPanel').style.display='none'; condition='app'; makeRequest(seat.id,'app',appTaps,undefined,false);
     $('appBtn').disabled=true; }; $('appBody').appendChild(o); }
 $('appBtn').onclick=openApp; $('appX').onclick=()=>$('appPanel').style.display='none';
 
 /* ---- push to talk ---- */
-let talking=false;
-function talkStart(){ if($('talkBtn').disabled) return; talking=true; $('talkBtn').classList.add('live'); $('talkBtn').textContent='● Listening… release to summon'; }
-function talkEnd(){ if(!talking) return; talking=false; $('talkBtn').classList.remove('live');
-  $('talkBtn').textContent='🎙 Hold to summon (“over here”)'; summonParticipant(); }
+let talking=false, talkT0=0;
+function talkStart(){ if($('talkBtn').disabled) return; talking=true; talkT0=performance.now(); $('talkBtn').classList.add('live'); $('talkBtn').innerHTML=t('talkLive'); }
+function talkEnd(){ if(!talking) return; talking=false; $('talkBtn').classList.remove('live'); $('talkBtn').innerHTML=t('talkIdle');
+  if(performance.now()-talkT0 < 280){ toast(t('holdHint')); return; }   // ignore accidental quick taps — you must actually HOLD
+  summonParticipant(); }
 $('talkBtn').addEventListener('pointerdown',e=>{e.preventDefault(); unlockAudio(); talkStart();});
 addEventListener('pointerup',()=>{ if(talking) talkEnd(); });
-addEventListener('keydown',e=>{ if(e.code==='Space' && !talking && !$('talkBtn').disabled){ e.preventDefault(); unlockAudio(); talkStart(); } });
+const typingInField=()=>/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
+addEventListener('keydown',e=>{ if(e.code==='Space' && !e.repeat && !talking && !$('talkBtn').disabled && !typingInField()){ e.preventDefault(); unlockAudio(); talkStart(); } });
 addEventListener('keyup',  e=>{ if(e.code==='Space' && talking){ e.preventDefault(); talkEnd(); } });
 
 /* ---- welcome / done ---- */
@@ -701,17 +906,21 @@ function whoLabel(n,s){ return (n&&s)?n+' · '+s:(n||s||'anon'); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function beginGuided(){
   const nm=$('welcomeName').value.trim(), sid=$('welcomeSid').value.trim();
-  if(!nm && !sid){ const h=$('welcomeHint'); h.style.color='#ff8a8a';
-    h.textContent='Please fill in at least one — your name or student ID. · 请至少填写姓名或学号其一。';
-    $('welcomeName').focus(); return; }
+  if(!nm && !sid){ const h=$('welcomeHint'); h.style.color='#ff8a8a'; h.dataset.err='1';
+    h.innerHTML=t('wHintErr'); $('welcomeName').focus(); return; }
   participantName=nm; participantSid=sid; participantId=sid||nm;
-  $('welcomeModal').classList.remove('show'); unlockAudio(); startGuidedStudy();
+  $('welcomeModal').classList.remove('show'); if(document.activeElement) document.activeElement.blur();
+  unlockAudio(); startGuidedStudy();
 }
 $('welcomeBegin').onclick=beginGuided;
 ['welcomeName','welcomeSid'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') beginGuided(); }));
 $('welcomeSkip').onclick=()=>{ $('welcomeModal').classList.remove('show'); document.body.classList.remove('pmode');
   surveysOn=false; setCondition('visual'); $('talkBtn').style.display='inline-block'; $('appBtn').style.display='inline-block'; unlockAudio(); };
 $('doneClose').onclick=()=>$('doneModal').classList.remove('show');
+$('doneNext').onclick=()=>{ $('doneModal').classList.remove('show');   // next person — keep accumulated data
+  $('welcomeName').value=''; $('welcomeSid').value='';
+  const h=$('welcomeHint'); h.dataset.err=''; h.style.color='var(--muted)'; h.innerHTML=t('wHint');
+  $('welcomeModal').classList.add('show'); setTimeout(()=>$('welcomeName').focus(),60); };
 
 function showBanner(html){ const b=$('guideBanner'); b.style.display='block'; b.innerHTML=html; }
 function hideBanner(){ $('guideBanner').style.display='none'; }
@@ -741,7 +950,10 @@ $('csvBtn').onclick=()=>{
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='hey_over_here_3d.csv'; a.click(); URL.revokeObjectURL(url);
 };
-$('clearBtn').onclick=()=>{ trials.length=0; refresh(); };
+$('clearBtn').onclick=()=>{ if(!confirm('清空所有已采集数据？此操作不可撤销（建议先导出 CSV）。')) return;
+  trials.length=0; saveTrials(); refresh(); };
+// guard against accidental tab close / navigation while data is uncollected
+addEventListener('beforeunload', e=>{ if(trials.length){ e.preventDefault(); e.returnValue=''; } });
 $('resToggle').onclick=()=>{ const r=$('res'); r.style.display = r.style.display==='none'?'block':(getComputedStyle(r).display==='none'?'block':'none'); };
 $('res').style.display='none';
 $('resToggle').addEventListener('dblclick',()=>{ $('res').style.display='block'; });
@@ -765,6 +977,26 @@ function updateEta(){
   tag.textContent='→ '+deskById(active.targetId).name+' · ETA '+eta.toFixed(0)+'s';
 }
 
+const BEACON_FAR  = new THREE.Color(0xffe08a);   // pale yellow when it first locks on / still far
+const BEACON_NEAR = new THREE.Color(0xff2e2e);   // bright red when it's right on you
+function updateBeacons(now){
+  for(const id in beacons){ const b=beacons[id];
+    if(!b.active){ if(b.mat.emissiveIntensity!==0){ b.mat.emissive.setHex(0x000000); b.mat.emissiveIntensity=0; b.light.intensity=0; } continue; }
+    if(robotState.mode==='serving' && active && active.targetId===id){           // arrived → steady bright red "here"
+      b.mat.emissive.copy(BEACON_NEAR); b.mat.emissiveIntensity=2.4;
+      b.light.color.copy(BEACON_NEAR); b.light.intensity=1.8;
+    } else {                                                                      // approaching → pale-yellow→red, flashing faster as it nears
+      const az=approachPoint(b.desk).z;
+      const dist=Math.hypot(robot.position.x-b.desk.x, robot.position.z-az);
+      const prox=Math.max(0,Math.min(1,1-dist/11));
+      const col=BEACON_FAR.clone().lerp(BEACON_NEAR, prox);   // yellow far → red near
+      const freq=1.3+prox*6.5;
+      const pulse=0.45+0.55*(0.5+0.5*Math.sin(now/1000*freq*Math.PI*2));
+      b.mat.emissive.copy(col); b.mat.emissiveIntensity=pulse*2.2;
+      b.light.color.copy(col); b.light.intensity=pulse*1.5;
+    }
+  }
+}
 /* ============================ MAIN LOOP ============================ */
 let last=performance.now();
 function frame(now){
@@ -774,8 +1006,8 @@ function frame(now){
   if(ledMat.emissive.getHex()!==0){ const pulse=0.72+0.28*Math.sin(now*0.006);
     ledMat.emissiveIntensity=pulse; robotGlow.intensity=(robotGlow.userData.base||0)*pulse; }
   else { robotGlow.intensity=0; }
-  if(mark.visible){ mark.position.y=0.05+0.12*Math.abs(Math.sin(now*0.004)); mark.rotation.z=now*0.001; }
-  applyCamera(); updateEta();
+  updateBeacons(now);
+  applyCamera(); updateEta(); updateQueueBadge();
   renderer.render(scene,camera);
   requestAnimationFrame(frame);
 }
@@ -785,17 +1017,34 @@ addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.upd
   renderer.setSize(innerWidth,innerHeight); });
 
 /* ---- entry ---- */
-setCondition('visual'); refresh();
+setCondition('visual'); refresh(); applyI18n();
+// global language toggle — flips EN/中文 live, persists, and updates the URL (no reload)
+$('langToggle').onclick=()=>{ lang=(lang==='zh')?'en':'zh'; localStorage.setItem('hoh_lang',lang);
+  const u=new URL(location.href); u.searchParams.set('lang',lang); history.replaceState(null,'',u); applyI18n(); };
 if(new URLSearchParams(location.search).has('study')){ $('welcomeModal').classList.add('show'); setTimeout(()=>$('welcomeName').focus(),80); }
 else { document.body.classList.remove('pmode'); surveysOn=false; $('appBtn').style.display='inline-block';
-  showBanner('<div class="sc">Explore mode</div><div class="wt">Drag to look around · hold the mic or press <b>Space</b> to summon · listen for the robot.</div>'); setTimeout(hideBanner,6000); }
+  showBanner('<div class="sc">'+t('exploreTitle')+'</div><div class="wt">'+t('exploreBody')+'</div>'); setTimeout(hideBanner,6000); }
+// ?top / ?shot=<mode> — clean static views for documentation/PPT figures (hidden feature)
+{ const _sp=new URLSearchParams(location.search);
+  if(_sp.has('top')||_sp.has('shot')){
+    const m=_sp.get('shot')||'top';
+    ['controls','status','resToggle','langToggle','guideBanner','lookHint'].forEach(id=>{ const e=$(id); if(e) e.style.display='none'; });
+    if(m==='top'){ topdownView=true; }
+    else if(m==='fp'){ // first-person: robot in the aisle heading to your doorway, ring lit (shows cubicle + occlusion)
+      yaw=0.06; pitch=-0.02; setCondition('visual');
+      robot.position.set(deskById(SEAT_ID).x,0,-0.3); robot.rotation.y=Math.PI; setLED(0x46e0c8);
+    } else if(m==='light'){ // face your desk, locate-light on (shows the desk feedback)
+      yaw=Math.PI; pitch=-0.10; setCondition('visual'); if(beacons[SEAT_ID]) beacons[SEAT_ID].active=true;
+    }
+  } }
 
 // expose a few things for headless testing
 window.__sim={ get state(){return robotState.mode;}, get trials(){return trials;}, robot, posSound, listener,
   summon:summonParticipant, setCondition, startGuidedStudy, get study(){return study;},
   get humGain(){return humGain.gain.value;}, get audioStarted(){return audioStarted;},
-  tick:(dt)=>{ tickRobot(dt); updateBeam(); driveAudio(dt); }, get queueLen(){return queue.length;}, get active(){return active;},
-  setYaw:(y)=>{ yaw=y; }, makeRequest, deskById, guidedStep, seatId:SEAT_ID, get robotPos(){return {x:robot.position.x,z:robot.position.z};} };
+  tick:(dt)=>{ tickRobot(dt); updateBeam(); driveAudio(dt); updateQueueBadge(); updateBeacons(performance.now()); }, get queueLen(){return queue.length;}, get active(){return active;},
+  beaconActive:(id)=>beacons[id]&&beacons[id].active, beaconLit:(id)=>beacons[id]?+beacons[id].mat.emissiveIntensity.toFixed(2):null,
+  setYaw:(y)=>{ yaw=y; }, setTopdown:(on)=>{ topdownView=!!on; }, makeRequest, deskById, guidedStep, seatId:SEAT_ID, get robotPos(){return {x:robot.position.x,z:robot.position.z};} };
 </script>
 </body>
 </html>

@@ -122,7 +122,7 @@
 
 <button id="langToggle">中文</button>
 <div id="guideBanner"></div>
-<div id="lookHint">🖱 Drag to look around — the robot may be out of sight, but you’ll <b>hear</b> it</div>
+<div id="lookHint">🖱 Drag to look around</div>
 <div id="etaTag"></div>
 <div id="toast"></div>
 <div id="queueBadge"></div>
@@ -160,7 +160,7 @@
   <div class="card" style="width:520px;max-width:94vw">
     <h3 id="wTitle">Help test a voice-summoned office robot 🤖</h3>
     <p id="wP1">You’re seated at your desk in a shared office. A small cleaning robot collects rubbish — you’ll call it over a few times (sometimes by phone app, sometimes by saying <b>“over here”</b>) and rate how each felt.</p>
-    <p id="wP2" style="color:var(--teal);font-size:13.5px">This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around — and listen, the robot makes a sound you can locate by ear. There are <b>no right or wrong answers</b>. ~4 minutes.</p>
+    <p id="wP2" style="color:var(--teal);font-size:13.5px">This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around. There are <b>no right or wrong answers</b>. ~4 minutes.</p>
     <div style="margin:14px 0 4px"><div style="display:flex;gap:10px">
       <div style="flex:1"><div id="nameLbl" class="qt" style="font-size:13px;margin-bottom:6px">Name · 姓名</div>
         <input id="welcomeName" placeholder="e.g. Alex" autocomplete="off"
@@ -183,14 +183,14 @@
     <h3 id="svTitle">Quick rating</h3>
     <p class="mini" id="surveyMeta"></p>
     <p class="mini" id="svSame">The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.</p>
-    <div class="qlabel main" id="qTrustL"><span class="star">★ Main</span> · “I could tell whether the robot understood me and where it was going.” (calibrated trust)</div>
+    <div class="qlabel main" id="qTrustL"><span class="star">★ Main</span> · “I could tell whether the robot understood me and where it was going.”</div>
     <div class="likert" id="qTrust"></div><div class="ends"><span id="endTrustLo">1 · strongly disagree</span><span id="endTrustHi">5 · strongly agree</span></div>
-    <div class="qlabel" id="qConfL">“I trusted it to come to the right desk.” (confidence)</div>
+    <div class="qlabel" id="qConfL">“I trusted it to come to the right desk.”</div>
     <div class="likert" id="qConf"></div><div class="ends"><span id="endConfLo">1 · strongly disagree</span><span id="endConfHi">5 · strongly agree</span></div>
-    <div class="qlabel" id="qEffL">“Mentally, how demanding was this summon?” (NASA-TLX, single item)</div>
+    <div class="qlabel" id="qEffL">“Mentally, how demanding was this summon?”</div>
     <div class="likert" id="qEff"></div><div class="ends"><span id="endEffLo">1 · very low</span><span id="endEffHi">5 · very high</span></div>
     <div id="qFairWrap" style="display:none">
-      <div class="qlabel" id="qFairL">“It handled everyone fairly — acknowledged me, queued us, gave an ETA.” (fairness)</div>
+      <div class="qlabel" id="qFairL">“It handled everyone fairly — acknowledged me, queued us, gave an ETA.”</div>
       <div class="likert" id="qFair"></div><div class="ends"><span id="endFairLo">1 · strongly disagree</span><span id="endFairHi">5 · strongly agree</span></div>
     </div>
     <div class="row" style="margin-top:18px">
@@ -637,23 +637,23 @@ let lang = (()=>{ const u=new URLSearchParams(location.search).get('lang');
   localStorage.setItem('hoh_lang',r); return r; })();
 const I18N = {
  en:{
-  lookHint:'🖱 Drag to look around — the robot may be out of sight, but you’ll <b>hear</b> it',
+  lookHint:'🖱 Drag to look around',
   talkIdle:'🎙 Hold to summon (“over here”)', talkLive:'● Listening… release to summon', openApp:'📱 Open app',
   appTitle:'🗑 BinBot App', uiActions:'UI actions:',
   cond_app:'app baseline', cond_voice:'voice only', cond_visual:'voice + visual', condLabel:'condition', seatLabel:'seat',
   wTitle:'Help test a voice-summoned office robot 🤖',
   wP1:'You’re seated at your desk in a shared office. A small cleaning robot collects rubbish — you’ll call it over a few times (sometimes by phone app, sometimes by saying <b>“over here”</b>) and rate how each felt.',
-  wP2:'This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around — and listen, the robot makes a sound you can locate by ear. There are <b>no right or wrong answers</b>. ~4 minutes.',
+  wP2:'This is a <b>first-person</b> view: you can’t see the whole room. Drag to look around. There are <b>no right or wrong answers</b>. ~4 minutes.',
   nameLbl:'Name · 姓名', sidLbl:'Student ID · 学号', namePh:'e.g. Alex', sidPh:'e.g. 12345678',
   wHint:'Fill in at least one — name or student ID. · 至少填一个即可。',
   wHintErr:'Please fill in at least one — your name or student ID. · 请至少填写姓名或学号其一。',
   wBegin:'▶ Begin the experiment (~4 min)', wSkip:'Just explore',
   svTitle:'Quick rating',
   svSame:'The same questions are asked after <b>every</b> summon — that’s what lets us compare the modes fairly.',
-  qTrust:'<span class="star">★ Main</span> · “From the moment I called it, I could always tell where the robot was going — never confused along the way.” (awareness)',
-  qConf:'“I trusted it to come to the right desk.” (confidence)',
-  qEff:'“Mentally, how demanding was this summon?” (NASA-TLX, single item)',
-  qFair:'“It handled everyone fairly — acknowledged me, queued us, gave an ETA.” (fairness)',
+  qTrust:'<span class="star">★ Main</span> · “From the moment I called it, I could always tell where the robot was going — never confused along the way.”',
+  qConf:'“I trusted it to come to the right desk.”',
+  qEff:'“Mentally, how demanding was this summon?”',
+  qFair:'“It handled everyone fairly — acknowledged me, queued us, gave an ETA.”',
   endAwareLo:'1 · couldn’t tell', endAwareHi:'5 · always knew', endConfLo:'1 · not confident', endConfHi:'5 · fully trusted', endLow:'1 · effortless', endHigh:'5 · exhausting', endFairLo:'1 · very unfair', endFairHi:'5 · very fair',
   svSubmit:'Submit rating', svSkip:'Skip',
   dTitle:'✓ All done — thank you! 🎉', dP1:'That’s the whole study — your answers are saved.',
@@ -663,12 +663,12 @@ const I18N = {
   scenarioOf:'Scenario {i} of {n}',
   app_what:'<b>There’s a snack wrapper on your desk.</b> To get the cleaning robot over, you use its phone app.',
   app_instr:'📱 Open the BinBot app → tap <b>Menu</b> → pick <b>your</b> desk → <b>Summon</b>.',
-  voice_what:'<b>Your hands are full</b>, so you just call out. The robot shows <b>no lights or screen</b> — turn and listen, you may only <b>hear</b> it until it appears.',
+  voice_what:'<b>Your hands are full</b>, so you just call out. The robot shows <b>no lights or screen</b> — you may only <b>hear</b> it until it appears.',
   voice_instr:'🎙 Hold the button (or press <b>Space</b>) and say “over here”.',
   visual_what:'<b>You call it by voice</b> — and this robot <b>lights up and points</b> as it goes, showing what it heard and where it’s heading.',
-  visual_instr:'🎙 Hold the button (or press <b>Space</b>) and say “over here”, and watch the robot.',
+  visual_instr:'🎙 Hold the button (or press <b>Space</b>) and say “over here”.',
   fair_what:'<b>Rush hour.</b> The office is busy — the robot may already be helping someone else.',
-  fair_instr:'🎙 Call it the usual way (hold the button / press <b>Space</b>) — then see how it <b>acknowledges you, queues you, and gives an ETA</b>.',
+  fair_instr:'🎙 Call it the usual way (hold the button / press <b>Space</b>).',
   colleagueCalled:'🔔 <b>{name}</b> got there just before you — the robot is serving them first.',
   queued:'✓ Heard you — serving <b>{name}</b> first. You’re next · ETA ~{eta}s',
   surveyMeta:'Condition: {cond} · caller: {caller} · arrived in {t}s',
@@ -676,22 +676,22 @@ const I18N = {
   holdHint:'Hold the button down (or hold Space) while you speak — a quick tap won’t summon.'
  },
  zh:{
-  lookHint:'🖱 拖动鼠标四处看 —— 机器人可能不在你视野里，但你能<b>听</b>到它',
+  lookHint:'🖱 拖动鼠标四处看',
   talkIdle:'🎙 按住召唤（“over here”）', talkLive:'● 正在聆听… 松开即召唤', openApp:'📱 打开 App',
   appTitle:'🗑 BinBot App', uiActions:'操作次数：',
   cond_app:'App 基线', cond_voice:'纯语音', cond_visual:'语音 + 视觉', condLabel:'条件', seatLabel:'你的工位',
   wTitle:'帮忙测试一台语音召唤的办公室机器人 🤖',
   wP1:'你坐在共享办公室里自己的工位上。一台小型清洁机器人负责收垃圾——你会把它叫过来几次（有时用手机 App，有时直接喊一句 <b>“over here”</b>），并给每次体验打分。',
-  wP2:'这是<b>第一人称</b>视角：你看不到整个房间。拖动鼠标四处看——也用耳朵听，机器人会发出可定位的声音。<b>没有标准答案</b>，跟着感觉走。约 4 分钟。',
+  wP2:'这是<b>第一人称</b>视角：你看不到整个房间。拖动鼠标四处看。<b>没有标准答案</b>，跟着感觉走。约 4 分钟。',
   nameLbl:'姓名 · Name', sidLbl:'学号 · Student ID', namePh:'例如 李华', sidPh:'例如 12345678',
   wHint:'姓名或学号，至少填一个即可。', wHintErr:'请至少填写姓名或学号其一。',
   wBegin:'▶ 开始实验（约 4 分钟）', wSkip:'随便看看',
   svTitle:'快速评分',
   svSame:'<b>每一次</b>召唤后都问同样的问题——这样才能公平地比较几种方式。',
-  qTrust:'<span class="star">★ 主问题</span> · “开始召唤后，我始终能判断出机器人要去哪里、中途没有迷惑过。”（觉察）',
-  qConf:'“我相信它会到正确的工位。”（信心）',
-  qEff:'“这次召唤在脑力上有多费劲？”（NASA-TLX 单项）',
-  qFair:'“它公平地对待了每个人——应答了我、让我排队、给了预计到达时间。”（公平）',
+  qTrust:'<span class="star">★ 主问题</span> · “开始召唤后，我始终能判断出机器人要去哪里、中途没有迷惑过。”',
+  qConf:'“我相信它会到正确的工位。”',
+  qEff:'“这次召唤在脑力上有多费劲？”',
+  qFair:'“它公平地对待了每个人——应答了我、让我排队、给了预计到达时间。”',
   endAwareLo:'1 · 我不清楚', endAwareHi:'5 · 我很清楚', endConfLo:'1 · 我不确定', endConfHi:'5 · 我很相信', endLow:'1 · 毫不费力', endHigh:'5 · 我很疲惫', endFairLo:'1 · 很不公平', endFairHi:'5 · 很公平',
   svSubmit:'提交评分', svSkip:'跳过',
   dTitle:'✓ 全部完成 —— 谢谢！🎉', dP1:'整个实验到此结束——你的回答已保存。',
@@ -701,12 +701,12 @@ const I18N = {
   scenarioOf:'场景 {i} / {n}',
   app_what:'<b>你桌上有片零食包装纸。</b>要把清洁机器人叫过来，你用它的手机 App。',
   app_instr:'📱 打开 BinBot App → 点<b>菜单</b> → 选<b>你的</b>工位 → <b>召唤</b>。',
-  voice_what:'<b>你手上正忙</b>，于是直接喊一声。机器人<b>没有灯、也没有屏幕</b>——转头、用耳朵听，在它出现之前你可能只能<b>听</b>到它。',
+  voice_what:'<b>你手上正忙</b>，于是直接喊一声。机器人<b>没有灯、也没有屏幕</b>——在它出现之前你可能只能<b>听</b>到它。',
   voice_instr:'🎙 按住按钮（或按<b>空格</b>）喊一句 “over here”。',
   visual_what:'<b>你喊一声</b>把它叫来——这台机器人会<b>亮灯并指向</b>，一路显示它听到了什么、要去哪里。',
-  visual_instr:'🎙 按住按钮（或按<b>空格</b>）喊 “over here”，并留意机器人。',
+  visual_instr:'🎙 按住按钮（或按<b>空格</b>）喊 “over here”。',
   fair_what:'<b>高峰期。</b>办公室很忙——机器人可能正在服务别人。',
-  fair_instr:'🎙 像平常一样召唤它（按住按钮 / 按<b>空格</b>），然后看它如何<b>应答你、让你排队、给出预计到达时间</b>。',
+  fair_instr:'🎙 像平常一样召唤它（按住按钮 / 按<b>空格</b>）。',
   colleagueCalled:'🔔 <b>{name}</b> 比你早一步——机器人正在先服务他。',
   queued:'✓ 已收到你的请求 —— 正在先服务 <b>{name}</b>。你是下一个 · 预计 ~{eta} 秒',
   surveyMeta:'条件：{cond} · 呼叫者：{caller} · 用时 {t} 秒',

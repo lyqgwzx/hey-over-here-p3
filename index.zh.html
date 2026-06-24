@@ -1,106 +1,16 @@
-<!DOCTYPE html>
-<html lang="zh">
+<!doctype html>
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>「Hey, Over Here!」— 语音召唤式办公室机器人（P3）</title>
-<style>
-  :root{ --ink:#1d1d1f; --muted:#6e6e73; --rule:#e7e7e7; --link:#0b5cab; }
-  *{ box-sizing:border-box }
-  html{ -webkit-text-size-adjust:100% }
-  body{ margin:0; background:#fdfdfc; color:var(--ink);
-    font:17px/1.78 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Helvetica,Arial,sans-serif; }
-  .wrap{ max-width:700px; margin:0 auto; padding:60px 24px 90px; }
-  a{ color:var(--link); text-decoration:none } a:hover{ text-decoration:underline }
-  h1{ font-size:31px; line-height:1.22; margin:0 0 6px; font-weight:700; letter-spacing:-.012em }
-  .sub{ font-size:18px; color:var(--muted); margin:0 0 16px; line-height:1.6 }
-  .meta{ font-size:14.5px; color:var(--muted); margin:0 0 24px; line-height:1.7 }
-  .meta b{ color:var(--ink); font-weight:600 }
-  .lang{ text-align:right; font-size:14px; color:var(--muted); margin:0 0 14px }
-  .lang a{ color:var(--link) } .lang b{ color:var(--ink) }
-  .links{ display:flex; flex-wrap:wrap; gap:10px }
-  .btn{ display:inline-block; border:1px solid #c9c9cc; border-radius:7px; padding:8px 15px; font-size:15px; color:var(--ink) }
-  .btn:hover{ border-color:var(--ink); text-decoration:none }
-  .btn.solid{ background:var(--ink); color:#fff; border-color:var(--ink) }
-  .btn.solid:hover{ opacity:.88 }
-  hr{ border:0; border-top:1px solid var(--rule); margin:40px 0 }
-  h2{ font-size:13px; letter-spacing:.04em; color:var(--muted); margin:36px 0 12px; font-weight:600 }
-  p{ margin:0 0 14px }
-  ol,ul{ margin:0 0 14px; padding-left:22px } li{ margin:7px 0 }
-  .cond{ margin:0 0 11px } .cond b{ font-weight:600 }
-  video{ display:block; width:100%; border:1px solid var(--rule); border-radius:7px; background:#000 }
-  .cap{ font-size:14px; color:var(--muted); margin-top:9px; line-height:1.7 }
-  .files p{ margin:7px 0 }
-  footer{ margin-top:52px; padding-top:18px; border-top:1px solid var(--rule); font-size:13.5px; color:var(--muted) }
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>“Hey, Over Here!” — 语音召唤办公室机器人 · HCI P3</title>
+<!-- The site is now a single bilingual page; keep this URL working by redirecting to the Chinese view. -->
+<meta http-equiv="refresh" content="0; url=index.html?lang=zh">
+<link rel="canonical" href="index.html?lang=zh">
+<script>location.replace("index.html?lang=zh");</script>
+<style>body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#48546a;background:#f5f8fc;margin:0;display:flex;height:100vh;align-items:center;justify-content:center}</style>
 </head>
 <body>
-<div class="wrap">
-
-  <div class="lang"><a href="index.html">EN</a> · <b>中文</b></div>
-
-  <h1>“Hey, Over Here!”</h1>
-  <p class="sub">面向共享办公室的语音召唤式移动垃圾回收机器人 —— 以网页仿真形式开展研究。</p>
-  <p class="meta"><b>李亚</b> &nbsp;·&nbsp; AP0011 人机交互 &nbsp;·&nbsp; 指导教师：Sahba Zojaji &nbsp;·&nbsp; 南方科技大学 / SLAI &nbsp;·&nbsp; 期末项目（P3）</p>
-
-  <div class="links">
-    <a class="btn solid" href="sim3d/index.html?study=1&lang=zh">参与实验 — 3D（需耳机）</a>
-    <a class="btn" href="sim/index.html?study=1">参与实验 — 2D</a>
-    <a class="btn" href="#versions">两个版本的区别</a>
-  </div>
-
-  <hr>
-
-  <h2>摘要</h2>
-  <p>如今要把办公室里的服务机器人叫过来，通常得打开 App、在菜单里点来点去。本项目要回答的问题是：<b>能不能用语音来取代这一套？</b>机器人听到一句“over here”后，通过声音估计呼叫者的方向（声源定位），再把这个方向对应到某个有名字的工位。我们把整个场景重建为网页仿真，开展<b>被试内实验</b>，比较三种召唤方式——App、纯语音、语音+视觉反馈——测量操作费力度、信任（尤其当机器人认错呼叫者时）、多人公平与认知负荷。</p>
-
-  <h2>工作原理</h2>
-  <ol>
-    <li>你在工位上喊一句“over here”——不用 App、不用按钮。</li>
-    <li>麦克风阵列估计你声音传来的方向（声源定位）。</li>
-    <li>这个方向被对应到一个<b>具名工位</b>——它知道“那是 Ben 的工位”，而不只是一个角度。</li>
-    <li>机器人开过来，收走垃圾。</li>
-  </ol>
-
-  <h2>三种召唤方式——我们比较什么</h2>
-  <p class="cond"><b>App（基线）。</b>打开 App、选工位、确认——要点好几下。</p>
-  <p class="cond"><b>纯语音。</b>喊一句“over here”。机器人靠声音找你，但不给任何反馈，所以在它到达之前，你无从得知它听成了什么。</p>
-  <p class="cond"><b>语音 + 视觉。</b>同样是语音，但机器人会显示它的理解——一圈灯光、一束指向它认为你所在方向的光、它要去的工位，以及预计到达时间（ETA）。</p>
-  <p>关键问题：声源定位有时会把机器人指向错误的工位。当这种情况发生时，<b>视觉反馈能否让人对它保持恰当的信任？</b></p>
-
-  <h2 id="versions">两种体验方式</h2>
-  <p class="cond"><b>3D · 第一人称（推荐）。</b>你坐在自己的工位上，<b>看不到整个办公室</b>——机器人可能在你身后，或被隔断挡住。它会发出<b>带空间方位的声音</b>，所以你能靠耳朵判断它在哪（请戴耳机）。这是更严谨的版本：正因为你看不到全屋，“无反馈”条件才真正是低信息的——而这恰恰是信任对比所需要的。</p>
-  <p class="cond"><b>2D · 俯视。</b>同一实验的快速、任意设备可用的俯视版——适合作基线，也适合没有耳机的手机。注意：俯视全程都能看着机器人，因此它会<i>低估</i>视觉反馈的价值（这是一个已知局限，3D 版修正了它）。</p>
-  <div class="links" style="margin-top:6px">
-    <a class="btn solid" href="sim3d/index.html?study=1&lang=zh">▶ 3D 实验</a>
-    <a class="btn" href="sim3d/index.html?lang=zh">3D — 自由探索</a>
-    <a class="btn" href="sim/index.html?study=1">2D 实验</a>
-    <a class="btn" href="sim/index.html">2D — 自由探索</a>
-  </div>
-
-  <h2 id="demo">演示</h2>
-  <video controls preload="metadata" src="assets/demo.mp4"></video>
-  <p class="cap">坐到工位，分别用 App 与语音召唤；机器人定位你并开过来，每一次都自动记录。<a href="sim3d/index.html?lang=zh">打开可交互版本 →</a></p>
-
-  <h2>测量什么</h2>
-  <ul>
-    <li><b>交互摩擦</b> —— 点击次数与到达耗时。</li>
-    <li><b>校准信任</b> —— 反馈能否帮你判断机器人，尤其当它走错工位时。</li>
-    <li><b>多人公平</b> —— 多人同时召唤时它如何处理。</li>
-    <li><b>认知负荷</b> —— 每种方式让人感觉多累（NASA-TLX）。</li>
-  </ul>
-
-  <h2>文件</h2>
-  <div class="files">
-    <p><a href="sim3d/index.html?lang=zh">3D 第一人称研究工具</a> &nbsp;·&nbsp; <a href="sim/index.html">2D 俯视研究工具</a></p>
-    <p>期末报告（PDF）—— 即将发布</p>
-    <p>演示文稿（PDF）—— 即将发布</p>
-  </div>
-
-  <footer>
-    “Hey, Over Here!” · AP0011 人机交互 · 李亚 · 南方科技大学 / SLAI · 2026
-  </footer>
-
-</div>
+<p>正在跳转到中文版… 如果没有自动跳转，请点 <a href="index.html?lang=zh">这里</a>。</p>
 </body>
 </html>

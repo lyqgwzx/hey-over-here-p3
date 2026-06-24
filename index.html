@@ -1,106 +1,331 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>"Hey, Over Here!" — Voice-Summoned Office Robot (P3)</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Hey, Over Here!" — Voice-Summoned Office Robot · HCI P3</title>
+<meta name="description" content="A voice-summoned office waste-collection robot, studied as a first-person browser simulation with spatial audio. HCI final project by Li Ya.">
 <style>
-  :root{ --ink:#1d1d1f; --muted:#6e6e73; --rule:#e7e7e7; --link:#0b5cab; }
-  *{ box-sizing:border-box }
-  html{ -webkit-text-size-adjust:100% }
-  body{ margin:0; background:#fdfdfc; color:var(--ink);
-    font:17px/1.66 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif; }
-  .wrap{ max-width:700px; margin:0 auto; padding:60px 24px 90px; }
-  a{ color:var(--link); text-decoration:none } a:hover{ text-decoration:underline }
-  h1{ font-size:31px; line-height:1.18; margin:0 0 6px; font-weight:700; letter-spacing:-.012em }
-  .sub{ font-size:18px; color:var(--muted); margin:0 0 16px; line-height:1.5 }
-  .meta{ font-size:14.5px; color:var(--muted); margin:0 0 24px }
-  .meta b{ color:var(--ink); font-weight:600 }
-  .lang{ text-align:right; font-size:14px; color:var(--muted); margin:0 0 14px }
-  .lang a{ color:var(--link) } .lang b{ color:var(--ink) }
-  .links{ display:flex; flex-wrap:wrap; gap:10px }
-  .btn{ display:inline-block; border:1px solid #c9c9cc; border-radius:7px; padding:8px 15px; font-size:15px; color:var(--ink) }
-  .btn:hover{ border-color:var(--ink); text-decoration:none }
-  .btn.solid{ background:var(--ink); color:#fff; border-color:var(--ink) }
-  .btn.solid:hover{ opacity:.88 }
-  hr{ border:0; border-top:1px solid var(--rule); margin:40px 0 }
-  h2{ font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:36px 0 12px; font-weight:600 }
-  p{ margin:0 0 14px }
-  ol,ul{ margin:0 0 14px; padding-left:22px } li{ margin:7px 0 }
-  .cond{ margin:0 0 11px } .cond b{ font-weight:600 }
-  video{ display:block; width:100%; border:1px solid var(--rule); border-radius:7px; background:#000 }
-  .cap{ font-size:14px; color:var(--muted); margin-top:9px }
-  .files p{ margin:7px 0 }
-  footer{ margin-top:52px; padding-top:18px; border-top:1px solid var(--rule); font-size:13.5px; color:var(--muted) }
+  :root{
+    --bg:#ffffff; --bg2:#f5f8fc; --bg3:#eef3fa;
+    --ink:#1d2740; --ink2:#48546a; --muted:#7c889d;
+    --line:#e2e8f2;
+    --teal:#15b8a6; --teal-d:#0f8e80;
+    --blue:#3f6fd6; --blue-d:#2f57b0;
+    --amber:#f0a52b; --red:#e5556a; --green:#56b870; --purple:#7b54c9;
+    --card:#ffffff; --shadow:0 1px 3px rgba(29,39,64,.06), 0 8px 28px rgba(29,39,64,.07);
+    --radius:18px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); color:var(--ink); background:var(--bg); line-height:1.6;
+       -webkit-font-smoothing:antialiased; font-size:16.5px}
+  a{color:var(--blue-d); text-decoration:none}
+  a:hover{text-decoration:underline}
+  img{max-width:100%; display:block}
+
+  /* i18n */
+  [data-lang="en"] .zh{display:none}
+  [data-lang="zh"] .en{display:none}
+
+  /* ---------- nav ---------- */
+  .nav{position:sticky; top:0; z-index:50; background:rgba(255,255,255,.82);
+       backdrop-filter:saturate(160%) blur(12px); border-bottom:1px solid var(--line)}
+  .nav-in{max-width:1080px; margin:0 auto; padding:11px 22px; display:flex; align-items:center; gap:18px}
+  .brand{font-weight:800; letter-spacing:-.01em; color:var(--ink); white-space:nowrap}
+  .brand .dot{color:var(--teal)}
+  .nav-links{display:flex; gap:20px; margin-left:auto; flex-wrap:wrap}
+  .nav-links a{color:var(--ink2); font-size:14.5px; font-weight:600}
+  .nav-links a:hover{color:var(--blue-d); text-decoration:none}
+  .lang-btn{border:1px solid var(--line); background:var(--bg2); color:var(--ink2);
+            border-radius:999px; padding:5px 13px; font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap}
+  .lang-btn:hover{border-color:var(--blue); color:var(--blue-d)}
+  @media(max-width:720px){ .nav-links{display:none} }
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1080px; margin:0 auto; padding:0 22px}
+  section{padding:46px 0; border-top:1px solid var(--line)}
+  section:first-of-type{border-top:none}
+  h2{font-size:27px; letter-spacing:-.02em; margin:0 0 6px}
+  .kicker{font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--teal-d); margin:0 0 4px}
+  .lead{color:var(--ink2); font-size:17.5px; max-width:760px}
+  p{margin:.6em 0}
+
+  /* ---------- hero ---------- */
+  .hero{background:
+        radial-gradient(1100px 460px at 78% -8%, #e7f8f5 0%, rgba(231,248,245,0) 60%),
+        radial-gradient(900px 420px at 5% 0%, #eaf0fd 0%, rgba(234,240,253,0) 55%);
+        border-top:none}
+  .hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:40px; align-items:center; padding:54px 0 50px}
+  @media(max-width:840px){ .hero-grid{grid-template-columns:1fr; gap:26px} }
+  .tag{display:inline-block; background:#fff; border:1px solid var(--line); color:var(--teal-d);
+       font-weight:700; font-size:13px; padding:4px 12px; border-radius:999px; box-shadow:var(--shadow)}
+  h1{font-size:54px; line-height:1.04; letter-spacing:-.035em; margin:16px 0 8px; font-weight:850}
+  @media(max-width:840px){ h1{font-size:40px} }
+  .hero .sub{font-size:19px; color:var(--ink2); max-width:560px; margin:0 0 14px}
+  .pivot{font-size:15px; color:var(--muted); max-width:560px; border-left:3px solid var(--teal); padding-left:12px; margin:14px 0 20px}
+  .authors{font-size:14.5px; color:var(--ink2); margin:18px 0 0}
+  .authors b{color:var(--ink)}
+  .hero-fig{border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); background:#fff}
+  .hero-fig img{width:100%}
+  .hero-fig .cap{font-size:12.5px; color:var(--muted); padding:9px 14px; background:var(--bg2)}
+
+  /* ---------- buttons ---------- */
+  .btns{display:flex; gap:11px; flex-wrap:wrap; margin-top:22px}
+  .btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:#fff;
+       color:var(--ink); font-weight:700; font-size:15px; padding:11px 18px; border-radius:12px; cursor:pointer;
+       box-shadow:0 1px 2px rgba(29,39,64,.05); transition:transform .08s ease, box-shadow .15s ease}
+  .btn:hover{text-decoration:none; transform:translateY(-1px); box-shadow:var(--shadow)}
+  .btn.solid{background:var(--teal); border-color:var(--teal); color:#fff}
+  .btn.solid:hover{background:var(--teal-d)}
+  .btn.blue{background:var(--blue); border-color:var(--blue); color:#fff}
+  .btn.blue:hover{background:var(--blue-d)}
+
+  /* ---------- cards ---------- */
+  .cards{display:grid; gap:16px; margin-top:22px}
+  .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)} .c2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){ .c3,.c4{grid-template-columns:1fr 1fr} }
+  @media(max-width:560px){ .c2,.c3,.c4{grid-template-columns:1fr} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow)}
+  .card h3{margin:0 0 6px; font-size:17px}
+  .card p{margin:0; color:var(--ink2); font-size:14.5px}
+  .pill{display:inline-block; font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; margin-bottom:10px}
+  .pill.app{background:#f1e8fb; color:var(--purple)} .pill.voice{background:#e3f7f3; color:var(--teal-d)} .pill.vv{background:#e7eefb; color:var(--blue-d)}
+
+  /* ---------- stat cards ---------- */
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); text-align:left}
+  .stat .big{font-size:34px; font-weight:850; letter-spacing:-.02em; line-height:1}
+  .stat .big small{font-size:16px; font-weight:700; color:var(--muted)}
+  .stat .lbl{font-size:14px; color:var(--ink2); margin-top:8px}
+  .stat .note{font-size:12.5px; color:var(--muted); margin-top:6px}
+  .s-teal .big{color:var(--teal-d)} .s-blue .big{color:var(--blue-d)} .s-green .big{color:var(--green)} .s-amber .big{color:var(--amber)}
+
+  /* ---------- figures ---------- */
+  .figrow{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:20px}
+  @media(max-width:760px){ .figrow{grid-template-columns:1fr} }
+  .fig{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; box-shadow:var(--shadow)}
+  .fig img{width:100%; aspect-ratio:16/10; object-fit:cover}
+  .fig .cap{font-size:13px; color:var(--ink2); padding:10px 13px}
+  .fig .cap b{color:var(--ink)}
+
+  video{width:100%; border-radius:var(--radius); border:1px solid var(--line); box-shadow:var(--shadow); background:#000; margin-top:20px}
+
+  .note{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:16px 18px; color:var(--ink2); font-size:14.5px; margin-top:18px}
+  .note b{color:var(--ink)}
+
+  footer{padding:30px 0 50px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--line)}
+  footer a{color:var(--ink2)}
+  .hr-list{display:flex; gap:8px 18px; flex-wrap:wrap; margin-top:8px}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="lang"><b>EN</b> · <a href="index.zh.html">中文</a></div>
-
-  <h1>“Hey, Over Here!”</h1>
-  <p class="sub">A voice-summoned mobile waste-collection robot for shared offices — studied as a browser simulation.</p>
-  <p class="meta"><b>Li Ya (李亚)</b> &nbsp;·&nbsp; AP0011 Human-Computer Interaction &nbsp;·&nbsp; Instructor: Sahba Zojaji &nbsp;·&nbsp; SUSTech / SLAI &nbsp;·&nbsp; Final Project (P3)</p>
-
-  <div class="links">
-    <a class="btn solid" href="sim3d/index.html?study=1&lang=en">Take part — 3D (headphones)</a>
-    <a class="btn" href="sim/index.html?study=1">Take part — 2D</a>
-    <a class="btn" href="#versions">The two versions</a>
+<!-- ============ NAV ============ -->
+<nav class="nav"><div class="nav-in">
+  <span class="brand">“Hey, Over Here<span class="dot">!</span>”</span>
+  <div class="nav-links">
+    <a href="#overview"><span class="en">Overview</span><span class="zh">概览</span></a>
+    <a href="#demo"><span class="en">Demo</span><span class="zh">演示</span></a>
+    <a href="#how"><span class="en">How it works</span><span class="zh">原理</span></a>
+    <a href="#study"><span class="en">Study</span><span class="zh">研究</span></a>
+    <a href="#results"><span class="en">Results</span><span class="zh">结果</span></a>
+    <a href="#resources"><span class="en">Resources</span><span class="zh">资源</span></a>
   </div>
+  <button class="lang-btn" id="langBtn"><span class="en">中文</span><span class="zh">EN</span></button>
+</div></nav>
 
-  <hr>
-
-  <h2>Abstract</h2>
-  <p>Summoning an in-office service robot today usually means opening an app and tapping through menus. This project asks whether <b>summoning by voice</b> can replace that. The robot responds to a spoken “over here”, estimates the caller’s direction by sound (sound-source localization), and matches it to a named workstation. We rebuild the scenario as a browser simulation and run a within-subjects study across three ways to summon — app, voice only, and voice with visual feedback — measuring effort, trust (especially when the robot mislocates the caller), multi-user fairness, and cognitive load.</p>
-
-  <h2>How it works</h2>
-  <ol>
-    <li>You say “over here” from your desk — no app, no buttons.</li>
-    <li>A microphone array estimates the direction your voice came from (sound-source localization).</li>
-    <li>That direction is matched to a named workstation — it knows “that’s Ben’s desk”, not just an angle.</li>
-    <li>The robot drives over and collects the waste.</li>
-  </ol>
-
-  <h2>Three ways to summon — what we compare</h2>
-  <p class="cond"><b>App (baseline).</b> Open an app, pick your desk, confirm — several taps.</p>
-  <p class="cond"><b>Voice only.</b> Say “over here”. The robot finds you by sound, but gives no feedback, so you can’t tell what it heard until it arrives.</p>
-  <p class="cond"><b>Voice + visual.</b> Same voice, but the robot shows what it understood — a light, a beam toward where it thinks you are, the desk it’s heading to, and an ETA.</p>
-  <p>The key question: sound-source localization sometimes sends the robot to the wrong desk. Does the visual feedback let people keep trusting it appropriately when that happens?</p>
-
-  <h2 id="versions">Two ways to experience it</h2>
-  <p class="cond"><b>3D · first-person (recommended).</b> You’re seated at your own desk and <b>can’t see the whole office</b> — the robot may be behind you or hidden by a partition. It makes a <b>spatially-positioned sound</b>, so you can locate it by ear (use headphones). This is the rigorous build: because you can’t watch the whole room, the “no-feedback” condition is genuinely low-information — which is exactly what the trust comparison needs.</p>
-  <p class="cond"><b>2D · top-down.</b> A quick, any-device overhead view of the same study — handy as a baseline and on phones without headphones. Caveat: the bird’s-eye view lets you watch the robot the whole time, so it <i>understates</i> the value of visual feedback (a known limitation the 3D build fixes).</p>
-  <div class="links" style="margin-top:6px">
-    <a class="btn solid" href="sim3d/index.html?study=1&lang=en">▶ 3D study</a>
-    <a class="btn" href="sim3d/index.html?lang=en">3D — explore</a>
-    <a class="btn" href="sim/index.html?study=1">2D study</a>
-    <a class="btn" href="sim/index.html">2D — explore</a>
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap"><div class="hero-grid">
+  <div>
+    <span class="tag"><span class="en">HCI Final Project · P3</span><span class="zh">人机交互期末项目 · P3</span></span>
+    <h1>“Hey, Over Here!”</h1>
+    <p class="sub">
+      <span class="en">A voice-summoned mobile waste-collection robot for shared offices — studied as a <b>first-person browser simulation with spatial audio</b>.</span>
+      <span class="zh">一台面向共享办公室的<b>语音召唤</b>移动收垃圾机器人——以<b>带空间音频的第一人称浏览器仿真</b>来研究。</span>
+    </p>
+    <p class="pivot">
+      <span class="en"><b>The pivot:</b> originally meant for a physical Leon robot; rebuilt as a controlled simulation when the hardware couldn’t be arranged in time — same research questions, a more reproducible platform.</span>
+      <span class="zh"><b>关于转向：</b>原计划用实体 Leon 机器人，因硬件来不及，转做受控仿真——研究问题不变，平台更可复现。</span>
+    </p>
+    <div class="btns">
+      <a class="btn solid" data-base="sim3d/index.html?study=1" href="sim3d/index.html?study=1&lang=en">
+        <span class="en">▶ Try the 3D study</span><span class="zh">▶ 体验 3D 实验</span></a>
+      <a class="btn" data-base="sim/index.html?study=1" href="sim/index.html?study=1">
+        <span class="en">Try the 2D study</span><span class="zh">体验 2D 实验</span></a>
+      <a class="btn" href="#resources"><span class="en">Paper &amp; code</span><span class="zh">论文与代码</span></a>
+    </div>
+    <p class="authors">
+      <b>Li Ya</b> &nbsp;·&nbsp; AP0011 Human–Computer Interaction &nbsp;·&nbsp;
+      <span class="en">Instructor:</span><span class="zh">指导教师：</span> Sahba Zojaji &nbsp;·&nbsp; SUSTech / SLAI
+      &nbsp;·&nbsp; <a href="mailto:250010055@slai.edu.cn">250010055@slai.edu.cn</a>
+    </p>
   </div>
+  <figure class="hero-fig">
+    <img src="assets/fig_fp.png" alt="First-person seated view of the office simulation" loading="lazy">
+    <figcaption class="cap">
+      <span class="en">First-person seat: you can’t see the whole room — you locate the robot by ear.</span>
+      <span class="zh">第一人称视角：看不到整个房间——你靠耳朵判断机器人在哪。</span>
+    </figcaption>
+  </figure>
+</div></div></header>
 
-  <h2 id="demo">Demo</h2>
-  <video controls preload="metadata" src="assets/demo.mp4"></video>
-  <p class="cap">Sit at a desk, summon by app vs. voice; the robot localizes you and drives over, logging every trial. <a href="sim/index.html">Open the interactive version →</a></p>
-
-  <h2>What it measures</h2>
-  <ul>
-    <li><b>Interaction friction</b> — taps and time to arrival.</li>
-    <li><b>Calibrated trust</b> — whether feedback helps you judge the robot, especially when it goes to the wrong desk.</li>
-    <li><b>Multi-user fairness</b> — how it handles several people summoning at once.</li>
-    <li><b>Cognitive load</b> — how demanding each method feels (NASA-TLX).</li>
-  </ul>
-
-  <h2>Files</h2>
-  <div class="files">
-    <p><a href="sim3d/index.html?lang=en">3D first-person study tool</a> &nbsp;·&nbsp; <a href="sim/index.html">2D top-down study tool</a></p>
-    <p>Final report (PDF) — coming soon</p>
-    <p>Presentation (PDF) — coming soon</p>
+<!-- ============ OVERVIEW ============ -->
+<section id="overview"><div class="wrap">
+  <p class="kicker"><span class="en">Overview</span><span class="zh">概览</span></p>
+  <h2><span class="en">Can you summon an office robot just by speaking?</span><span class="zh">能不能只靠说一句话就把办公室机器人叫过来？</span></h2>
+  <p class="lead">
+    <span class="en">Summoning a service robot today usually means opening an app and tapping through menus. We ask whether <b>summoning by voice</b> — saying “over here” — can replace that, and whether adding lightweight <b>visual feedback</b> helps people trust the robot appropriately. The robot estimates the caller’s direction by sound and maps it to a named desk; because that is imperfect, it sometimes goes to the wrong person — so the study also asks whether users <i>notice</i>, and whether queueing under load still feels <i>fair</i>.</span>
+    <span class="zh">如今召唤服务机器人通常要开 App、点菜单。我们想知道：<b>用语音召唤</b>——喊一句 “over here”——能不能取代它；再加上轻量的<b>视觉反馈</b>，能否帮人恰当地信任机器人。机器人靠声音判断呼叫方向、映射到某张工位；由于并不完美，它有时会走错人——所以研究还问：用户是否<i>察觉</i>得到，以及高峰排队时是否仍觉得<i>公平</i>。</span>
+  </p>
+  <div class="cards c3">
+    <div class="card"><h3><span class="en">Lower friction</span><span class="zh">更低摩擦</span></h3>
+      <p><span class="en">Does voice really cut the cost of summoning vs. an app?</span><span class="zh">语音召唤真的比 App 省事吗？</span></p></div>
+    <div class="card"><h3><span class="en">Calibrated trust</span><span class="zh">校准信任</span></h3>
+      <p><span class="en">When the robot goes to the wrong desk, do people catch it?</span><span class="zh">机器人走错桌时，人能不能及时发现？</span></p></div>
+    <div class="card"><h3><span class="en">Fair under load</span><span class="zh">负载下的公平</span></h3>
+      <p><span class="en">When several people call at once, does queueing feel fair?</span><span class="zh">多人同时召唤、要排队时，感觉公平吗？</span></p></div>
   </div>
+</div></section>
 
-  <footer>
-    “Hey, Over Here!” · AP0011 Human-Computer Interaction · Li Ya · SUSTech / SLAI · 2026
-  </footer>
+<!-- ============ DEMO ============ -->
+<section id="demo"><div class="wrap">
+  <p class="kicker"><span class="en">Demo</span><span class="zh">演示</span></p>
+  <h2><span class="en">Watch a full run</span><span class="zh">完整演示</span></h2>
+  <p class="lead"><span class="en">Sit at your desk, summon the robot by app vs. voice, and rate each trial. The robot localizes you and drives over, logging every trial to CSV.</span><span class="zh">坐在工位上，分别用 App 和语音召唤机器人，并为每次体验打分。机器人定位你、开过来，每次试次都记录成 CSV。</span></p>
+  <video controls preload="none" poster="assets/poster3d.jpg" src="assets/demo3d.mp4"></video>
+  <div class="btns">
+    <a class="btn solid" data-base="sim3d/index.html?study=1" href="sim3d/index.html?study=1&lang=en"><span class="en">▶ Open the 3D study</span><span class="zh">▶ 打开 3D 实验</span></a>
+    <a class="btn" data-base="sim3d/index.html" href="sim3d/index.html?lang=en"><span class="en">3D — free explore</span><span class="zh">3D — 自由探索</span></a>
+  </div>
+</div></section>
 
-</div>
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how"><div class="wrap">
+  <p class="kicker"><span class="en">How it works</span><span class="zh">原理</span></p>
+  <h2><span class="en">Sound in, the right desk out</span><span class="zh">声音进来，正确工位出去</span></h2>
+  <p class="lead"><span class="en">A voice call gives a noisy <b>bearing</b>; the hard part is resolving it to the <b>right person’s desk</b>. Feedback is delivered <b>to your seat</b> (a desk light), not on the robot — because a seated person can’t see through walls.</span><span class="zh">一次语音呼叫给出一个有噪声的<b>方向</b>；难点是把它解析到<b>正确那个人的工位</b>。反馈给在<b>你的座位上</b>（桌面提示灯），而不是机器人身上——因为坐着的人看不穿墙。</span></p>
+  <div class="figrow">
+    <figure class="fig"><img src="assets/fig_layout.png" alt="Top-down office layout" loading="lazy">
+      <figcaption class="cap"><b><span class="en">Office layout.</span><span class="zh">办公室布局。</span></b> <span class="en">Semi-enclosed workstations; the robot navigates the aisle.</span><span class="zh">半封闭工位；机器人沿走道导航。</span></figcaption></figure>
+    <figure class="fig"><img src="assets/fig_fp.png" alt="First-person view" loading="lazy">
+      <figcaption class="cap"><b><span class="en">Your view.</span><span class="zh">你的视角。</span></b> <span class="en">First-person, occluded — you locate the robot by 3D spatial audio.</span><span class="zh">第一人称、有遮挡——靠 3D 空间音频辨位。</span></figcaption></figure>
+    <figure class="fig"><img src="assets/fig_light.png" alt="Desk locate-light" loading="lazy">
+      <figcaption class="cap"><b><span class="en">Desk locate-light.</span><span class="zh">桌面定位灯。</span></b> <span class="en">Lit = it locked onto you; flashes faster as it nears.</span><span class="zh">亮起=已锁定你；越近闪得越快。</span></figcaption></figure>
+  </div>
+</div></section>
+
+<!-- ============ STUDY ============ -->
+<section id="study"><div class="wrap">
+  <p class="kicker"><span class="en">Study design</span><span class="zh">研究设计</span></p>
+  <h2><span class="en">Three ways to summon — what we compare</span><span class="zh">三种召唤方式——我们在比什么</span></h2>
+  <div class="cards c3">
+    <div class="card"><span class="pill app">APP</span><h3><span class="en">App (baseline)</span><span class="zh">App（基线）</span></h3>
+      <p><span class="en">Open an app, pick your desk, confirm — several taps.</span><span class="zh">开 App、选工位、确认——好几下点击。</span></p></div>
+    <div class="card"><span class="pill voice">VOICE</span><h3><span class="en">Voice only</span><span class="zh">纯语音</span></h3>
+      <p><span class="en">Say “over here”. One action — but no lights or screen.</span><span class="zh">喊一句 “over here”。一个动作——但没有灯、没有屏幕。</span></p></div>
+    <div class="card"><span class="pill vv">VOICE + VISUAL</span><h3><span class="en">Voice + visual</span><span class="zh">语音 + 视觉</span></h3>
+      <p><span class="en">Same voice, plus a desk light that shows it locked onto you.</span><span class="zh">同样语音，外加桌面灯显示它已锁定你。</span></p></div>
+  </div>
+  <p class="lead" style="margin-top:24px"><span class="en"><b>Measures (standard HCI instruments):</b> interaction friction (taps, ISO 9241-11), cognitive load (NASA-TLX mental demand), calibrated trust (Lee &amp; See 2004), awareness / legibility (Dragan 2013), and perceived fairness (Colquitt 2001). Within-subjects; localization outcome (correct vs. wrong desk) is balanced; a multi-user rush-hour scenario tests fairness.</span><span class="zh"><b>测量（标准 HCI 量表）：</b>交互摩擦（点击次数，ISO 9241-11）、认知负荷（NASA-TLX 心智需求）、校准信任（Lee &amp; See 2004）、觉察 / 易读性（Dragan 2013）、程序公平（Colquitt 2001）。被试内设计；定位对/错平衡；多人高峰场景测公平。</span></p>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="kicker"><span class="en">Results · pilot, N = 5</span><span class="zh">结果 · 预实验，N = 5</span></p>
+  <h2><span class="en">What the pilot showed</span><span class="zh">预实验发现了什么</span></h2>
+  <div class="cards c4">
+    <div class="stat s-teal"><div class="big">3 → 1</div>
+      <div class="lbl"><span class="en">Actions to summon (app → voice)</span><span class="zh">召唤动作数（App → 语音）</span></div>
+      <div class="note"><span class="en">all 5 / 5 participants</span><span class="zh">5/5 被试一致</span></div></div>
+    <div class="stat s-blue"><div class="big">2.8 → 1.4</div>
+      <div class="lbl"><span class="en">Mental effort, 1–5 (voice → +desk light)</span><span class="zh">心智负荷 1–5（语音 → +桌面灯）</span></div>
+      <div class="note"><span class="en">the light offloads tracking by ear</span><span class="zh">灯减轻了“用耳朵追踪”的负担</span></div></div>
+    <div class="stat s-amber"><div class="big">−1.2 <small>vs −0.6</small></div>
+      <div class="lbl"><span class="en">Confidence drop on a wrong desk (visual vs voice)</span><span class="zh">走错桌时信心跌幅（视觉 vs 语音）</span></div>
+      <div class="note"><span class="en">calibrated trust — suggestive, 3/5</span><span class="zh">校准信任——趋势性，3/5</span></div></div>
+    <div class="stat s-green"><div class="big">4.6<small>/5</small></div>
+      <div class="lbl"><span class="en">Perceived fairness when queued</span><span class="zh">排队时的公平感</span></div>
+      <div class="note"><span class="en">despite waits up to ~8 s</span><span class="zh">即便等到约 8 秒</span></div></div>
+  </div>
+  <div class="note"><span class="en"><b>In short:</b> voice cuts the work; the desk light lowers mental effort and helps confidence fall when the robot picks the wrong desk; and queueing under load still felt fair, because the robot acknowledges you, gives an ETA, and lights your desk on arrival — so the wait is expected, not jarring. <b>This is a pilot (N = 5, descriptive)</b> — directions are indicative; a larger study is the next step.</span><span class="zh"><b>一句话：</b>语音省事；桌面灯降低心智负荷、并在机器人走错桌时帮你及时收回信心；高峰排队仍觉公平，因为机器人会应答你、给出预计到达时间、到你时灯会亮——等待因此在预期之内、不突兀。<b>这是预实验（N=5，描述性）</b>——结论是趋势性的，下一步做更大样本。</span></div>
+</div></section>
+
+<!-- ============ VERSIONS ============ -->
+<section id="versions"><div class="wrap">
+  <p class="kicker"><span class="en">Two versions</span><span class="zh">两个版本</span></p>
+  <h2><span class="en">Try it yourself</span><span class="zh">亲自试试</span></h2>
+  <div class="cards c2">
+    <div class="card">
+      <h3><span class="en">3D · first-person <span style="color:var(--teal-d)">(recommended)</span></span><span class="zh">3D · 第一人称 <span style="color:var(--teal-d)">(推荐)</span></span></h3>
+      <p style="margin-bottom:14px"><span class="en">Seated at your own desk, you <b>can’t see the whole office</b>; the robot makes a <b>spatially-positioned sound</b> (use headphones). This is the rigorous build — the “no-feedback” condition is genuinely low-information, which is what the trust comparison needs.</span><span class="zh">坐在自己工位上，你<b>看不到整个办公室</b>；机器人发出<b>空间定位声</b>（请戴耳机）。这是严谨版——“无反馈”条件信息确实很少，正是信任对比所需要的。</span></p>
+      <div class="btns" style="margin-top:0">
+        <a class="btn blue" data-base="sim3d/index.html?study=1" href="sim3d/index.html?study=1&lang=en"><span class="en">▶ 3D study</span><span class="zh">▶ 3D 实验</span></a>
+        <a class="btn" data-base="sim3d/index.html" href="sim3d/index.html?lang=en"><span class="en">Explore</span><span class="zh">探索</span></a>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="en">2D · top-down</span><span class="zh">2D · 俯视</span></h3>
+      <p style="margin-bottom:14px"><span class="en">A quick, any-device overhead view of the same study — handy on phones without headphones. <b>Caveat:</b> the bird’s-eye view lets you watch the robot the whole time, so it <i>understates</i> the value of visual feedback — a known limitation the 3D build fixes.</span><span class="zh">同一研究的俯视快速版，任何设备可用、无耳机也行。<b>注意：</b>上帝视角能全程看着机器人，所以会<i>低估</i>视觉反馈的价值——这是 3D 版修复的已知局限。</span></p>
+      <div class="btns" style="margin-top:0">
+        <a class="btn" data-base="sim/index.html?study=1" href="sim/index.html?study=1"><span class="en">2D study</span><span class="zh">2D 实验</span></a>
+        <a class="btn" data-base="sim/index.html" href="sim/index.html"><span class="en">Explore</span><span class="zh">探索</span></a>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ RESOURCES ============ -->
+<section id="resources"><div class="wrap">
+  <p class="kicker"><span class="en">Resources</span><span class="zh">资源</span></p>
+  <h2><span class="en">Paper, code &amp; a native build</span><span class="zh">论文、代码与原生版</span></h2>
+  <div class="cards c4">
+    <a class="card" href="assets/paper.pdf" style="color:inherit">
+      <h3>📄 <span class="en">Paper</span><span class="zh">论文</span></h3>
+      <p><span class="en">The full CHI-style report (PDF).</span><span class="zh">完整的 CHI 风格报告（PDF）。</span></p></a>
+    <a class="card" data-base="sim3d/index.html?study=1" href="sim3d/index.html?study=1&lang=en" style="color:inherit">
+      <h3>🕹 <span class="en">Live demo</span><span class="zh">在线演示</span></h3>
+      <p><span class="en">The interactive 3D &amp; 2D studies.</span><span class="zh">可交互的 3D 与 2D 实验。</span></p></a>
+    <a class="card" href="https://github.com/lyqgwzx/hey-over-here-p3" style="color:inherit">
+      <h3>💻 <span class="en">Code</span><span class="zh">代码</span></h3>
+      <p><span class="en">Full source on GitHub (web sims).</span><span class="zh">GitHub 全部源码（网页仿真）。</span></p></a>
+    <a class="card" href="https://github.com/lyqgwzx/hey-over-here-p3/tree/main/godot" style="color:inherit">
+      <h3>🎮 <span class="en">Godot version</span><span class="zh">Godot 版</span></h3>
+      <p><span class="en">A native Godot 4 port of the study.</span><span class="zh">用 Godot 4 实现的原生版。</span></p></a>
+  </div>
+  <div class="note"><span class="en"><b>A note on method.</b> This is a controlled <b>Wizard-of-Oz</b> simulation built for an academic HCI course project (AP0011, P3). Localization outcomes are scripted so every participant sees the same balanced set of correct and mislocalized trials. Pilot data (N = 5) were collected in person with participants’ consent; no participant data is published here.</span><span class="zh"><b>方法说明。</b>这是为人机交互课程项目（AP0011，P3）搭建的受控 <b>Wizard-of-Oz</b> 仿真。定位对/错是脚本化的，使每位被试看到同样平衡的“对”与“错”试次。预实验数据（N=5）经被试同意现场采集；本页不公开任何被试数据。</span></div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><b>“Hey, Over Here!”</b> &nbsp;·&nbsp; <span class="en">Li Ya · AP0011 Human–Computer Interaction · Instructor: Sahba Zojaji · SUSTech / SLAI</span><span class="zh">李亚 · AP0011 人机交互 · 指导教师：Sahba Zojaji · 南方科技大学 / 河套学院</span> &nbsp;·&nbsp; <a href="mailto:250010055@slai.edu.cn">250010055@slai.edu.cn</a></div>
+  <div class="hr-list">
+    <a data-base="sim3d/index.html?study=1" href="sim3d/index.html?study=1&lang=en">3D study</a>
+    <a data-base="sim/index.html?study=1" href="sim/index.html?study=1">2D study</a>
+    <a href="https://github.com/lyqgwzx/hey-over-here-p3">GitHub</a>
+    <a href="https://github.com/lyqgwzx/hey-over-here-p3/tree/main/godot">Godot</a>
+  </div>
+</div></footer>
+
+<script>
+  (function(){
+    var root=document.documentElement;
+    function applyLang(l){
+      l = (l==='zh')?'zh':'en';
+      root.setAttribute('data-lang', l);
+      root.setAttribute('lang', l==='zh'?'zh-CN':'en');
+      try{ localStorage.setItem('hoh_site_lang', l); }catch(e){}
+      document.querySelectorAll('a[data-base]').forEach(function(a){
+        var b=a.getAttribute('data-base');
+        a.setAttribute('href', b + (b.indexOf('?')>-1?'&':'?') + 'lang=' + l);
+      });
+    }
+    var params=new URLSearchParams(location.search);
+    var saved=null; try{ saved=localStorage.getItem('hoh_site_lang'); }catch(e){}
+    applyLang(params.get('lang') || saved || 'en');
+    document.getElementById('langBtn').addEventListener('click', function(){
+      applyLang(root.getAttribute('data-lang')==='zh' ? 'en' : 'zh');
+    });
+  })();
+</script>
 </body>
 </html>
